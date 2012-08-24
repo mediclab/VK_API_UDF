@@ -27,3 +27,5 @@ While 1
 
 	EndSwitch
 WEnd
+
+;VK
