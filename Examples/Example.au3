@@ -1,4 +1,4 @@
-#include "VK_API.au3"
+#include "../API/VK_API.au3"
 #include <Array.au3>
 
 Global $sSt, $sFriends, $iID = 2672631
