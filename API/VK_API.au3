@@ -1220,44 +1220,43 @@ EndFunc   ;==>_VK_likesGetList
 ; Remarks .......: Отсутствуют
 ; ============================================================================================================
 Func __guiAccessToken($_sURI, $_sGUITitle, $_sRedirect_uri)
-	Local $_hATgui, $sResponse, $sURL
-	Local $oIE = _IECreateEmbedded()
-	Local $hTimer = TimerInit()
+    Local $oIE = _IECreateEmbedded()
+    Local $hTimer = TimerInit()
 
-	$_hATgui = GUICreate($_sGUITitle, 550, 400, -1, -1, $WS_POPUPWINDOW)
-	GUICtrlCreateObj($oIE, 1, 1, 548, 398)
+    $_hATgui = GUICreate($_sGUITitle, 400, 300, -1, -1, $WS_SYSMENU)
+    GUICtrlCreateObj($oIE, 5, 5, 385, 260)
 
-	_IENavigate($oIE, $_sURI)
-	$sResponse = _IEBodyReadText($oIE)
+    _IENavigate($oIE, $_sURI)
+    $sResponse = _IEBodyReadText($oIE)
 
-	If StringInStr($sResponse, "access_token=") Then
-		Return __responseParse($sResponse)
-	EndIf
+    If StringInStr($sResponse, "Login success") Then
+        $sURL = _IEPropertyGet($oIE, "locationurl")
+        Return __responseParse($sURL)
+    EndIf
 
-	GUISetState(@SW_SHOW)
+    GUISetState(@SW_SHOW)
 
-	While 1
-		Switch GUIGetMsg()
-			Case $GUI_EVENT_CLOSE
-				Return SetError(1, 0, 1)
-		EndSwitch
-
-		If TimerDiff($hTimer) > 250 Then
-			$sURL = _IEPropertyGet($oIE, "locationurl")
-			If StringInStr($sURL, $_sRedirect_uri & "#") Then
-				GUISetState(@SW_HIDE)
-				$sResponse = _IEBodyReadText($oIE)
-				If StringInStr($sResponse, "access_token=") Then
-					GUIDelete($_hATgui)
-					Return __responseParse($sResponse)
-				Else
-					GUIDelete($_hATgui)
-					Return SetError(-1, 0, -1)
-				EndIf
-			EndIf
-			$hTimer = TimerInit()
-		EndIf
-	WEnd
+    While 1
+        If GUIGetMsg()=$GUI_EVENT_CLOSE Then
+            Exit
+        ElseIf TimerDiff($hTimer) > 50 Then
+            $sURL = _IEPropertyGet($oIE, "locationurl")
+            If StringInStr($sURL, $_sRedirect_uri & "#") Then
+                GUISetState(@SW_HIDE)
+                $sResponse = _IEBodyReadText($oIE)
+                If StringInStr($sResponse, "Login success") Then
+                    GUIDelete($_hATgui)
+                    Return __responseParse($sURL)
+                Else
+                    GUIDelete($_hATgui)
+                    Return SetError(-1,0,-1)
+                EndIf
+            ElseIf StringInStr($sURL,'error') Then
+                Exit
+            EndIf
+            $hTimer = TimerInit()
+        EndIf
+    WEnd
 EndFunc   ;==>__guiAccessToken
 
 ; #FUNCTION# =================================================================================================
