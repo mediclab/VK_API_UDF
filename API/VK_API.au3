@@ -972,7 +972,7 @@ EndFunc   ;==>_VK_photosgetAlbumsCount
 #region Wall Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_wallPost()
-; Description ...: Возвращает все фотографии пользователя или группы в антихронологическом порядке.
+; Description ...: Публикует новую запись на своей или чужой стене.
 ; Syntax.........: _VK_wallPost($_sAccessToken, $_sMessage = "", $_sAttashments = "", $_sOwner_ID = "", $_sServices = "", $_sFrom_Group = 0, $_sFriends_Only = 0)
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sMessage - текст сообщения (является обязательным, если не задан параметр attachment)
@@ -1011,7 +1011,7 @@ EndFunc   ;==>_VK_wallPost
 
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_wallDelete()
-; Description ...: Возвращает все фотографии пользователя или группы в антихронологическом порядке.
+; Description ...: Удаляет запись со стены пользователя.
 ; Syntax.........: _VK_wallDelete($_sAccessToken, $_sPost_ID, $_sOwner_ID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sPost_ID - идентификатор записи на стене пользователя.
