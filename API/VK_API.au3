@@ -4,6 +4,7 @@
 #include <GUIConstantsEx.au3>
 #include <Array.au3>
 
+
 ;Opt("MustDeclareVars",1)
 #cs
 	photos.editAlbum Ц обновл€ет данные альбома дл€ фотографий.
