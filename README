@@ -1,6 +1,7 @@
-﻿This AutoIT UDF for the site VKontakte, to work with its API.
-All the functions are in the testing phase, so please all write errors here.
+﻿This AutoIt UDF designed to work with VKontakte.ru website API.
+All the functions currently are in testing stage, so please write about any errors here.
 
 ========= Below this line starts the Russian language
+
 Эта UDF предназначена для ЯП AutoIT для работы с VKontakte API. 
 Все функции находятся в стадии тестирования, поэтому все ошибки описывайте здесь.
