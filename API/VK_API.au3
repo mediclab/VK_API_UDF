@@ -584,6 +584,8 @@ EndFunc   ;==>_VK_statusGet
 Func _VK_statusSet($_sText = "")
 	Local $sStatus, $sResponse
 
+	$_sText = _Encoding_URIEncode($_sText)
+
 	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/status.set.xml?text=" & $_sText & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -1376,4 +1378,18 @@ Func _StringFormatTime($s_Format, $i_Timestamp)
 			'ptr', $ptr_Time[0])
 	Return $av_StrfTime[1]
 EndFunc   ;==>_StringFormatTime
+
+
+;Description: Encode string to URI format (Uniform Resource Identifier)
+;Author: CreatoR
+Func _Encoding_URIEncode($sString)
+	Local $oSC = ObjCreate("ScriptControl")
+	$oSC.Language = "JavaScript"
+	Local $Encode_URI = $oSC.Eval("encodeURI('" & $sString & "');")
+
+	$oSC = 0
+
+	Return $Encode_URI
+EndFunc   ;==>_Encoding_URIEncode
+
 #endregion Internal Functions
