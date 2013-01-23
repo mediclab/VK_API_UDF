@@ -4,27 +4,14 @@
 #include <GUIConstantsEx.au3>
 #include <Array.au3>
 
-
 ;Opt("MustDeclareVars",1)
-#cs
-	photos.editAlbum – обновляет данные альбома для фотографий.
-	photos.edit – изменяет описание у выбранной фотографии.
-	photos.move – переносит фотографию из одного альбома в другой.
-	photos.makeCover – делает фотографию обложкой альбома.
-	photos.reorderAlbums – меняет порядок альбома в списке альбомов пользователя.
-	audio.getById – возвращает информацию об аудиозаписях по их идентификаторам.
-	audio.getLyrics - возвращает текст аудиозаписи.
-	audio.getUploadServer – возвращает адрес сервера для загрузки аудиозаписей.
-	audio.save – сохраняет аудиозаписи после успешной загрузки.
-	audio.search – осуществляет поиск по аудиозаписям.
-	audio.add – копирует существующую аудиозапись на страницу пользователя или группы.
-	audio.delete – удаляет аудиозапись со страницы пользователя или группы.
-#ce
+
+Global $_sAccessToken
 
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_SignIn()
 ; Description ...: Совершает авторизацию на сайте ВКонтакте
-; Syntax.........: _VK_SignIn($iAppID, $sScope, $sRedirect_uri = "http://api.vkontakte.ru/blank.html", $sDisplay = "wap", $sResponse_type = "token")
+; Syntax.........: _VK_SignIn($iAppID, $sScope, $sRedirect_uri = "https://oauth.vk.com/blank.html", $sResponse_type = "token")
 ; Parameters ....: $iAppID - App ID приложения полученного на сайте ВКонтакте
 ;    			   $sScope - Битовые маски для доступа к разным возможностям ВКонтакте (Будут указаны к описаниям функций)
 ;				   $sRedirect_uri -
@@ -34,8 +21,8 @@
 ; Author ........: Fever
 ; Remarks .......: Отсутствуют
 ; ============================================================================================================
-Func _VK_SignIn($iAppID, $sScope, $sRedirect_uri = "http://api.vkontakte.ru/blank.html", $sResponse_type = "code")
-	Local $sOAuth_url = "http://api.vkontakte.ru/oauth/authorize?client_id=" & $iAppID & "&scope=" & $sScope & "&redirect_uri=" & $sRedirect_uri & "&response_type=" & $sResponse_type
+Func _VK_SignIn($iAppID, $sScope,  $sRedirect_uri = "https://oauth.vk.com/blank.html", $sDisplay = "wap", $sResponse_type = "token")
+	Local $sOAuth_url = "https://oauth.vk.com/authorize?client_id=" & $iAppID & "&scope=" & $sScope & "&display=" & $sDisplay & "&redirect_uri=" & $sRedirect_uri & "&response_type=" & $sResponse_type
 	Return __guiAccessToken($sOAuth_url, "ВКонтакте | Вход", $sRedirect_uri)
 EndFunc   ;==>_VK_SignIn
 
@@ -44,7 +31,7 @@ EndFunc   ;==>_VK_SignIn
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_getProfiles()
 ; Description ...: Возвращает расширенную информацию о пользователях.
-; Syntax.........: _VK_getProfiles($_sAccessToken, $_sUIDs, $_sFields = "", $_sName_case = "")
+; Syntax.........: _VK_getProfiles($_sUIDs, $_sFields = "", $_sName_case = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации
 ;                  $_sUIDs - Идентификаторы пользователей или их короткие имена (screen_name). Максимум 1000 пользователей.
 ;				   Значения могут быть переданы либо в виде строки, где идентификаторы перечислены через запятую, либо в виде массива
@@ -88,7 +75,7 @@ EndFunc   ;==>_VK_SignIn
 ;				   Если в $_sFields будет указано поле contacts, то будет возвращено 1 дополнительное поле
 ;				   Если в $_sFields будет указано поле education, то будет возвращено 4 дополнительных поля
 ; ============================================================================================================
-Func _VK_getProfiles($_sAccessToken, $_sUIDs, $_sFields = "", $_sName_case = "")
+Func _VK_getProfiles($_sUIDs, $_sFields = "", $_sName_case = "")
 	Local $sUIDsDots = "", $sResponse, $aFields, $aUIDs, $nCount, $aTemp, $aUsers
 
 	If $_sFields = "" Then $_sFields = "uid,first_name,last_name,sex,online,bdate,city,country,photo,photo_medium,photo_medium_rec," _
@@ -119,7 +106,7 @@ Func _VK_getProfiles($_sAccessToken, $_sUIDs, $_sFields = "", $_sName_case = "")
 	Next
 
 	$sUIDsDots = StringRegExpReplace($sUIDsDots, "^[,\h]+|[,\h]+$", "")
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/getProfiles.xml?uids=" & $sUIDsDots & "&fields=" & $_sFields & "&name_case=" & $_sName_case & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/getProfiles.xml?uids=" & $sUIDsDots & "&fields=" & $_sFields & "&name_case=" & $_sName_case & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -150,10 +137,10 @@ EndFunc   ;==>_VK_getProfiles
 ; Author ........: Fever, Medic84
 ; Remarks .......: Отсутствуют
 ; ============================================================================================================
-Func _VK_getUserSettings($_sAccessToken, $_sUID = "")
+Func _VK_getUserSettings($_sUID = "")
 	Local $sReturn, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/getUserSettings.xml?access_token=" & $_sAccessToken[1] & "&uid=" & $_sUID), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/getUserSettings.xml?access_token=" & $_sAccessToken & "&uid=" & $_sUID), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -175,7 +162,7 @@ EndFunc   ;==>_VK_getUserSettings
 Func _VK_getUserBalance($_sAccessToken)
 	Local $sReturn, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/getUserBalance.xml?access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/getUserBalance.xml?access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -191,7 +178,7 @@ EndFunc   ;==>_VK_getUserBalance
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_friendsGet()
 ; Description ...: Возвращает список идентификаторов друзей пользователя или расширенную информацию о друзьях пользователя
-; Syntax.........: _VK_friendsGet($_sAccessToken, $_sUID = "", $_sFields = "", $_sName_case = "", $_iCount = "", $_sOffset = "")
+; Syntax.........: _VK_friendsGet($_sUID = "", $_sFields = "", $_sName_case = "", $_iCount = "", $_sOffset = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sUID - Идентификатор пользователя, друзей которого необходимо получить. По умолчанию - текущий пользователь
 ;                  $_sFields - Поля анкет, которые необходимо получить. По умолчанию только Идентификаторы пользователей. Если указано full то выдает двумерный массив из 27 полей
@@ -235,7 +222,7 @@ EndFunc   ;==>_VK_getUserBalance
 ;				   Если в $_sFields будет указано поле contacts, то будет возвращено 1 дополнительное поле
 ;				   Если в $_sFields будет указано поле education, то будет возвращено 4 дополнительных поля
 ; ============================================================================================================
-Func _VK_friendsGet($_sAccessToken, $_sUID = "", $_sFields = "", $_sName_case = "", $_iCount = "", $_sOffset = "")
+Func _VK_friendsGet($_sUID = "", $_sFields = "", $_sName_case = "", $_iCount = "", $_sOffset = "")
 	Local $aFields, $sResponse, $aTemp, $aUsers
 
 	If $_sFields = "" Then
@@ -251,7 +238,7 @@ Func _VK_friendsGet($_sAccessToken, $_sUID = "", $_sFields = "", $_sName_case = 
 	$aFields = StringSplit($aFields, ",", 2)
 
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.get.xml?uid=" & $_sUID & "&fields=" & $_sFields & "&name_case=" & $_sName_case & "&count=" & $_iCount & "&offset=" & $_sOffset & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.get.xml?uid=" & $_sUID & "&fields=" & $_sFields & "&name_case=" & $_sName_case & "&count=" & $_iCount & "&offset=" & $_sOffset & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -274,7 +261,7 @@ EndFunc   ;==>_VK_friendsGet
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsGetOnline()
 ; Description ...: Возвращает список идентификаторов, находящихся на сайте друзей, текущего пользователя.
-; Syntax.........: _VK_friendsGetOnline($_sAccessToken, $_sUID = "")
+; Syntax.........: _VK_friendsGetOnline($_sUID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sUID - Идентификатор пользователя, друзей которого необходимо получить. По умолчанию - текущий пользователь
 ; Return values .: Успех - Массив идентификаторов и @error = 0.
@@ -282,10 +269,10 @@ EndFunc   ;==>_VK_friendsGet
 ; Author ........: Fever, Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
 ; ============================================================================================================
-Func _VK_friendsGetOnline($_sAccessToken, $_sUID = "")
+Func _VK_friendsGetOnline($_sUID = "")
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.getOnline.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.getOnline.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -297,7 +284,7 @@ EndFunc   ;==>_VK_friendsGetOnline
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_friendsGetMutual()
 ; Description ...: Возвращает список идентификаторов общих друзей между парой пользователей.
-; Syntax.........: _VK_friendsGetMutual($_sAccessToken, $_sTarget_uid, $_sSource_uid = "")
+; Syntax.........: _VK_friendsGetMutual($_sTarget_uid, $_sSource_uid = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sTarget_uid - идентификатор пользователя, с которым необходимо искать общих друзей.
 ;                  $_sSource_uid - идентификатор пользователя, чьи друзья пересекаются с друзьями пользователя с идентификатором target_uid
@@ -307,10 +294,10 @@ EndFunc   ;==>_VK_friendsGetOnline
 ; Author ........: Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
 ; ============================================================================================================
-Func _VK_friendsGetMutual($_sAccessToken, $_sTarget_uid, $_sSource_uid = "")
+Func _VK_friendsGetMutual($_sTarget_uid, $_sSource_uid = "")
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.getMutual.xml?access_token=" & $_sAccessToken[1] & "&target_uid=" & $_sTarget_uid & "&source_uid=" & $_sSource_uid), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.getMutual.xml?access_token=" & $_sAccessToken & "&target_uid=" & $_sTarget_uid & "&source_uid=" & $_sSource_uid), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -322,7 +309,7 @@ EndFunc   ;==>_VK_friendsGetMutual
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_friendsAddList()
 ; Description ...: Создает новый список друзей у текущего пользователя.
-; Syntax.........: _VK_friendsAddList($_sAccessToken, $sName, $_sUIDs)
+; Syntax.........: _VK_friendsAddList($sName, $_sUIDs)
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $sName - Имя списка
 ;                  $_sUIDs - Идентификаторы друзей, которых необходимо занести в список
@@ -332,7 +319,7 @@ EndFunc   ;==>_VK_friendsGetMutual
 ; Author ........: Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
 ; ============================================================================================================
-Func _VK_friendsAddList($_sAccessToken, $sName, $_sUIDs)
+Func _VK_friendsAddList($sName, $_sUIDs)
 	Local $sUIDsDots = "", $sResponse, $aUIDs, $sReturn
 
 	If Not IsArray($_sUIDs) Then
@@ -350,7 +337,7 @@ Func _VK_friendsAddList($_sAccessToken, $sName, $_sUIDs)
 
 	$sUIDsDots = StringRegExpReplace($sUIDsDots, "^[,\h]+|[,\h]+$", "")
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.addList.xml?access_token=" & $_sAccessToken[1] & "&name=" & $sName & "&uids=" & $sUIDsDots), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.addList.xml?access_token=" & $_sAccessToken & "&name=" & $sName & "&uids=" & $sUIDsDots), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -366,7 +353,7 @@ EndFunc   ;==>_VK_friendsAddList
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_groupsGet()
 ; Description ...: Возвращает список групп указанного пользователя.
-; Syntax.........: _VK_groupsGet($_sAccessToken, $iExtended = 0, $_sUID = "")
+; Syntax.........: _VK_groupsGet($iExtended = 0, $_sUID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $iExtended - Возвращение полной информации о группах пользователя. По умолчанию - нет
 ;                  $_sUID - Идентификатор пользователя у которого нужно получить список групп
@@ -385,10 +372,10 @@ EndFunc   ;==>_VK_friendsAddList
 ; Author ........: Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 262144.
 ; ============================================================================================================
-Func _VK_groupsGet($_sAccessToken, $iExtended = 0, $_sUID = "")
+Func _VK_groupsGet($iExtended = 0, $_sUID = "")
 	Local $Temp, $sResponse, $sReturn0, $asFields[8] = ["gid", "name", "screen_name", "is_closed", "is_admin", "photo", "photo_medium", "photo_big"]
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/groups.get.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken[1] & "&extended=" & $iExtended), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/groups.get.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken & "&extended=" & $iExtended), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -416,7 +403,7 @@ EndFunc   ;==>_VK_groupsGet
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_groupsGetByID()
 ; Description ...: Возвращает информацию о заданной группе или о нескольких группах.
-; Syntax.........: _VK_groupsGetByID($_sAccessToken, $_sGIDs)
+; Syntax.........: _VK_groupsGetByID($_sGIDs)
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sGIDs - идентификаторы групп, информацию о которых необходимо получить. Могут быть использованы короткие имена групп.
 ;			       Значения могут быть переданы либо в виде строки, где идентификаторы перечислены через запятую, либо в виде массива. Максимум 500 групп.
@@ -436,7 +423,7 @@ EndFunc   ;==>_VK_groupsGet
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 262144.
 ;				   Если в списке или в массиве будет более 500 групп, то будет выдана только первые 500
 ; ============================================================================================================
-Func _VK_groupsGetByID($_sAccessToken, $_sGIDs)
+Func _VK_groupsGetByID($_sGIDs)
 	Local $sResponse, $asFields[8] = ["gid", "name", "screen_name", "is_closed", "is_admin", "photo", "photo_medium", "photo_big"]
 	Local $sGIDsDots, $aGIDs, $nCount, $Temp
 
@@ -459,7 +446,7 @@ Func _VK_groupsGetByID($_sAccessToken, $_sGIDs)
 	Next
 
 	$sGIDsDots = StringRegExpReplace($sGIDsDots, "^[,\h]+|[,\h]+$", "")
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/groups.getById.xml?gids=" & $sGIDsDots & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/groups.getById.xml?gids=" & $sGIDsDots & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -486,7 +473,7 @@ EndFunc   ;==>_VK_groupsGetByID
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_audioGet()
 ; Description ...: Возвращает список аудиозаписей пользователя или группы.
-; Syntax.........: _VK_audioGet($_sAccessToken, $_sUID = "", $_sGID = "")
+; Syntax.........: _VK_audioGet($_sUID = "", $_sGID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_iNeed_User - если этот параметр равен 1, сервер возвратит базовую информацию о владельце аудиозаписей
 ;                  $_sUID - id пользователя, которому принадлежат аудиозаписи (по умолчанию — текущий пользователь)
@@ -515,11 +502,11 @@ EndFunc   ;==>_VK_groupsGetByID
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 8.
 ;				   Обратите внимание, что ссылки на аудиозаписи привязаны к ip адресу.
 ; ============================================================================================================
-Func _VK_audioGet($_sAccessToken, $_iNeed_User = 0, $_sUID = "", $_sGID = "", $_iAlbumID = "", $_sAIDs = "", $_iCount = "", $_iOffset = "")
+Func _VK_audioGet($_iNeed_User = 0, $_sUID = "", $_sGID = "", $_iAlbumID = "", $_sAIDs = "", $_iCount = "", $_iOffset = "")
 	Local $Temp, $sResponse, $asFields[6] = ["aid", "owner_id", "artist", "title", "duration", "url"]
 	Local $aOwnerFields[4] = ["id", "photo", "name", "name_gen"]
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/audio.get.xml?access_token=" & $_sAccessToken[1] & "&uid=" & $_sUID & "&gid=" & $_sGID & "&aids=" & $_sAIDs & "&need_user=" & $_iNeed_User & "&album_id=" & $_iAlbumID & "&count=" & $_iCount & "&offset=" & $_iOffset), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/audio.get.xml?access_token=" & $_sAccessToken & "&uid=" & $_sUID & "&gid=" & $_sGID & "&aids=" & $_sAIDs & "&need_user=" & $_iNeed_User & "&album_id=" & $_iAlbumID & "&count=" & $_iCount & "&offset=" & $_iOffset), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -558,7 +545,7 @@ EndFunc   ;==>_VK_audioGet
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_statusGet()
 ; Description ...: Получает статус пользователя.
-; Syntax.........: _VK_statusGet($_sAccessToken, $_sUID = "")
+; Syntax.........: _VK_statusGet($_sUID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sUID - UID пользователя у которого требуется получить статус. По умолчанию - текущий пользователь
 ; Return values .: Успех - Строка со статусом и @error = 0.
@@ -566,22 +553,27 @@ EndFunc   ;==>_VK_audioGet
 ; Author ........: Fever, Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 1024.
 ; ============================================================================================================
-Func _VK_statusGet($_sAccessToken, $_sUID = "")
+Func _VK_statusGet($_sUID = "")
 	Local $sStatus, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/status.get.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/status.get.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
 		$sStatus = _CreateArray($sResponse, "text")
-		Return $sStatus[0]
+
+		If IsArray($sStatus) Then
+			Return $sStatus[0]
+		Else
+			Return ""
+		EndIf
 	EndIf
 EndFunc   ;==>_VK_statusGet
 
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_statusSet()
 ; Description ...: Устанавливает новый статус текущему пользователю.
-; Syntax.........: _VK_statusSet($_sAccessToken, $_sText = "")
+; Syntax.........: _VK_statusSet($_sText = "")
 ; Parameters ....: $_sAccessToken - максимальное допустимое значение для секретного ключа в диапазоне
 ;                  $_sText - текст статуса, который необходимо установить.  По умолчанию - очищение статуса
 ; Return values .: Успех - 1 и @error = 0.
@@ -589,10 +581,10 @@ EndFunc   ;==>_VK_statusGet
 ; Author ........: Fever, Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 1024.
 ; ============================================================================================================
-Func _VK_statusSet($_sAccessToken, $_sText = "")
+Func _VK_statusSet($_sText = "")
 	Local $sStatus, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/status.set.xml?text=" & $_sText & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/status.set.xml?text=" & $_sText & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -608,7 +600,7 @@ EndFunc   ;==>_VK_statusSet
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_photosGetAlbums()
 ; Description ...: Возвращает список альбомов пользователя.
-; Syntax.........:  _VK_photosGetAlbums($_sAccessToken, $_iNeed_Covers = 0 , $_sUID = "", $_sGID = "", $_sAIDs = "")
+; Syntax.........:  _VK_photosGetAlbums($_iNeed_Covers = 0 , $_sUID = "", $_sGID = "", $_sAIDs = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_iNeed_Covers - будет возвращено дополнительное поле thumb_src. По умолчанию поле thumb_src не возвращается.
 ;                  $_sUID - ID пользователя, которому принадлежат альбомы. По умолчанию – ID текущего пользователя.
@@ -631,7 +623,7 @@ EndFunc   ;==>_VK_statusSet
 ; Author ........: Fever, Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 4.
 ; ============================================================================================================
-Func _VK_photosGetAlbums($_sAccessToken, $_iNeed_Covers = 0, $_sUID = "", $_sGID = "", $_sAIDs = "")
+Func _VK_photosGetAlbums($_iNeed_Covers = 0, $_sUID = "", $_sGID = "", $_sAIDs = "")
 	Local $aTemp, $sResponse, $Temp, $aAlbums
 
 	If $_iNeed_Covers Then
@@ -640,7 +632,7 @@ Func _VK_photosGetAlbums($_sAccessToken, $_iNeed_Covers = 0, $_sUID = "", $_sGID
 		Dim $asFields[9] = ["aid", "owner_id", "title", "description", "created", "updated", "size", "privacy", "thumb_id"]
 	EndIf
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getAlbums.xml?uid=" & $_sUID & "&aids=" & $_sAIDs & "&gid=" & $_sGID & "&need_covers=" & $_iNeed_Covers & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getAlbums.xml?uid=" & $_sUID & "&aids=" & $_sAIDs & "&gid=" & $_sGID & "&need_covers=" & $_iNeed_Covers & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -666,7 +658,7 @@ EndFunc   ;==>_VK_photosGetAlbums
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_photosGet
 ; Description ...: Возвращает список фотографий в альбоме.
-; Syntax.........: _VK_photosGet($_sAccessToken, $_sUID, $_sGID, $_sAID, $_iExtended = 0, $_iPIDs = "", $_iLimit = "", $_iOffset = "")
+; Syntax.........: _VK_photosGet($_sUID, $_sGID, $_sAID, $_iExtended = 0, $_iPIDs = "", $_iLimit = "", $_iOffset = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sUID - ID пользователя, которому принадлежит альбом с фотографиями.
 ;                  $_sGID - ID группы, которой принадлежит альбом с фотографиями.
@@ -692,7 +684,7 @@ EndFunc   ;==>_VK_photosGetAlbums
 ; Author ........: Fever, Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 4.
 ; ============================================================================================================
-Func _VK_photosGet($_sAccessToken, $_sUID, $_sGID, $_sAID, $_iExtended = 0, $_iPIDs = "", $_iLimit = "", $_iOffset = "")
+Func _VK_photosGet($_sUID, $_sGID, $_sAID, $_iExtended = 0, $_iPIDs = "", $_iLimit = "", $_iOffset = "")
 	Local $sReturn0, $sResponse, $Temp
 
 	If Not $_sUID Then $_sUID = ""
@@ -704,7 +696,7 @@ Func _VK_photosGet($_sAccessToken, $_sUID, $_sGID, $_sAID, $_iExtended = 0, $_iP
 		Dim $asFields[9] = ["aid", "owner_id", "src", "src_small", "src_big", "src_xbig", "src_xxbig", "text", "created"]
 	EndIf
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.get.xml?uid=" & $_sUID & "&aid=" & $_sAID & "&gid=" & $_sGID & "&pids=" & $_iPIDs & "&extended=" & $_iExtended & "&limit=" & $_iLimit & "&offset=" & $_iOffset & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.get.xml?uid=" & $_sUID & "&aid=" & $_sAID & "&gid=" & $_sGID & "&pids=" & $_iPIDs & "&extended=" & $_iExtended & "&limit=" & $_iLimit & "&offset=" & $_iOffset & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -731,7 +723,7 @@ EndFunc   ;==>_VK_photosGet
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_photosGetAlbumsCount()
 ; Description ...: Возвращает количество доступных альбомов пользователя.
-; Syntax.........: _VK_photosgetAlbumsCount($_sAccessToken, $_sUID = "", $_sGID = "")
+; Syntax.........: _VK_photosgetAlbumsCount($_sUID = "", $_sGID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sUID - ID пользователя, которому принадлежат альбомы. По умолчанию – ID текущего пользователя.
 ;                  $_sGID - ID группы, которой принадлежат альбомы.
@@ -740,10 +732,10 @@ EndFunc   ;==>_VK_photosGet
 ; Author ........: Medic84
 ; Remarks .......: Отсутствуют
 ; ============================================================================================================
-Func _VK_photosGetAlbumsCount($_sAccessToken, $_sUID = "", $_sGID = "")
+Func _VK_photosGetAlbumsCount($_sUID = "", $_sGID = "")
 	Local $sCount, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getAlbumsCount.xml?uid=" & $_sUID & "&gid=" & $_sGID & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getAlbumsCount.xml?uid=" & $_sUID & "&gid=" & $_sGID & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -755,7 +747,7 @@ EndFunc   ;==>_VK_photosgetAlbumsCount
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_photosGetById()
 ; Description ...: Возвращает информацию о фотографиях по их идентификаторам.
-; Syntax.........: _VK_photosGetById($_sAccessToken, $_sPhotos, $_iExtended = 0)
+; Syntax.........: _VK_photosGetById($_sPhotos, $_iExtended = 0)
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sPhotos - перечисленные через запятую идентификаторы (либо массив), которые представляют собой идущие через
 ;				   		знак подчеркивания id пользователей, разместивших фотографии, и id самих фотографий. Чтобы получить
@@ -778,7 +770,7 @@ EndFunc   ;==>_VK_photosgetAlbumsCount
 ; Author ........: Fever, Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 4.
 ; ============================================================================================================
-Func _VK_photosGetById($_sAccessToken, $_sPhotos, $_iExtended = 0)
+Func _VK_photosGetById($_sPhotos, $_iExtended = 0)
 	Local $aPhoto, $sResponse, $aTemp, $sPhotosDots, $aPhotos
 
 	If $_iExtended Then
@@ -802,7 +794,7 @@ Func _VK_photosGetById($_sAccessToken, $_sPhotos, $_iExtended = 0)
 	$sPhotosDots = StringRegExpReplace($sPhotosDots, "^[,\h]+|[,\h]+$", "")
 
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getById.xml?photos=" & $sPhotosDots & "&extended=" & $_iExtended & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getById.xml?photos=" & $sPhotosDots & "&extended=" & $_iExtended & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -827,7 +819,7 @@ EndFunc   ;==>_VK_photosGetById
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_photosGetAll()
 ; Description ...: Возвращает все фотографии пользователя или группы в антихронологическом порядке.
-; Syntax.........: _VK_photosGetAll($_sAccessToken, $_iExtended = 0, $_sCount = "", $_sOffset = "")
+; Syntax.........: _VK_photosGetAll($_iExtended = 0, $_sCount = "", $_sOffset = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_iExtended - если равен 1, то будет возвращено дополнительное поле likes. По умолчанию поле likes не возвращается.
 ;                  $_sOwnerID -идентификатор пользователя (по умолчанию - текущий пользователь). Если передано отрицательное значение,
@@ -852,7 +844,7 @@ EndFunc   ;==>_VK_photosGetById
 ; Author ........: Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 4.
 ; ============================================================================================================
-Func _VK_photosGetAll($_sAccessToken, $_iExtended = 0, $_sOwnerID = "", $_sCount = 100, $_sOffset = "")
+Func _VK_photosGetAll($_iExtended = 0, $_sOwnerID = "", $_sCount = 100, $_sOffset = "")
 	Local $sResponse, $aTemp
 
 	If $_sCount > 100 Then $_sCount = 100
@@ -863,7 +855,7 @@ Func _VK_photosGetAll($_sAccessToken, $_iExtended = 0, $_sOwnerID = "", $_sCount
 		Dim $asFields[10] = ["pid", "aid", "owner_id", "src", "src_small", "src_big", "src_xbig", "src_xxbig", "text", "created"]
 	EndIf
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getAll.xml?access_token=" & $_sAccessToken[1] & "&count=" & $_sCount & "&owner_id=" & $_sOwnerID & "&extended=" & $_iExtended & "&offset=" & $_sOffset), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getAll.xml?access_token=" & $_sAccessToken & "&count=" & $_sCount & "&owner_id=" & $_sOwnerID & "&extended=" & $_iExtended & "&offset=" & $_sOffset), 4)
 	ConsoleWrite($sResponse)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -891,7 +883,7 @@ EndFunc   ;==>_VK_photosGetAll
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_photosСreateAlbum()
 ; Description ...: Создает пустой альбом для фотографий.
-; Syntax.........: _VK_photosСreateAlbum($_sAccessToken, $_sTitle, $_sDescription = "", $_iPrivacy = 0, $_iComment_Privacy = 0)
+; Syntax.........: _VK_photosСreateAlbum($_sTitle, $_sDescription = "", $_iPrivacy = 0, $_iComment_Privacy = 0)
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sTitle - название альбома.
 ;                  $_sDescription - текст описания альбома.
@@ -912,13 +904,13 @@ EndFunc   ;==>_VK_photosGetAll
 ; Author ........: Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 4.
 ; ============================================================================================================
-Func _VK_photosCreateAlbum($_sAccessToken, $_sTitle, $_sDescription = "", $_iPrivacy = 0, $_iComment_Privacy = 0)
+Func _VK_photosCreateAlbum($_sTitle, $_sDescription = "", $_iPrivacy = 0, $_iComment_Privacy = 0)
 	Local $aRetArray, $sResponse
 	Dim $asFields[9] = ["aid","thumb_id","owner_id","title","description","created","updated","size","privacy"]
 
 	If Not $_sDescription = "" Then $_sDescription = BinaryToString(StringToBinary($_sDescription, 4))
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.createAlbum.xml?title=" & $_sTitle & "&description=" & $_sDescription & "&privacy=" & $_iPrivacy & "&comment_privacy=" & $_iComment_Privacy & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.createAlbum.xml?title=" & $_sTitle & "&description=" & $_sDescription & "&privacy=" & $_iPrivacy & "&comment_privacy=" & $_iComment_Privacy & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -936,7 +928,7 @@ EndFunc   ;==>_VK_photosgetAlbumsCount
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_photosEditAlbum()
 ; Description ...: Создает пустой альбом для фотографий.
-; Syntax.........: _VK_photosEditAlbum($_sAccessToken, $_sAID, $_sTitle, $_sDescription = -1, $_iPrivacy = -1, $_iComment_Privacy = -1)
+; Syntax.........: _VK_photosEditAlbum($_sAID, $_sTitle, $_sDescription = -1, $_iPrivacy = -1, $_iComment_Privacy = -1)
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sAID - идентификатор редактируемого альбома.
 ;                  $_sTitle - новое название альбома.
@@ -948,7 +940,7 @@ EndFunc   ;==>_VK_photosgetAlbumsCount
 ; Author ........: Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 4.
 ; ============================================================================================================
-Func _VK_photosEditAlbum($_sAccessToken, $_sAID, $_sTitle, $_sDescription = -1, $_iPrivacy = -1, $_iComment_Privacy = -1)
+Func _VK_photosEditAlbum($_sAID, $_sTitle, $_sDescription = -1, $_iPrivacy = -1, $_iComment_Privacy = -1)
 	Local $sRet, $sResponse, $sQuery = ""
 
 	If Not $_sDescription = -1 Then
@@ -958,7 +950,7 @@ Func _VK_photosEditAlbum($_sAccessToken, $_sAID, $_sTitle, $_sDescription = -1, 
 	If Not $_iPrivacy = -1 Then $sQuery &= "&privacy=" & $_iPrivacy
 	If Not $_iComment_Privacy = -1 Then $sQuery &= "&comment_privacy=" & $_iComment_Privacy
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.editAlbum.xml?title=" & $_sTitle & "&access_token=" & $_sAccessToken[1] & $sQuery), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.editAlbum.xml?title=" & $_sTitle & "&access_token=" & $_sAccessToken & $sQuery), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -973,7 +965,7 @@ EndFunc   ;==>_VK_photosgetAlbumsCount
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_wallPost()
 ; Description ...: Публикует новую запись на своей или чужой стене.
-; Syntax.........: _VK_wallPost($_sAccessToken, $_sMessage = "", $_sAttashments = "", $_sOwner_ID = "", $_sServices = "", $_sFrom_Group = 0, $_sFriends_Only = 0)
+; Syntax.........: _VK_wallPost($_sMessage = "", $_sAttashments = "", $_sOwner_ID = "", $_sServices = "", $_sFrom_Group = 0, $_sFriends_Only = 0)
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sMessage - текст сообщения (является обязательным, если не задан параметр attachment)
 ;                  $_sAttashments - список объектов, приложенных к записи и разделённых символом ",". Поле attachments представляется в формате:
@@ -994,13 +986,13 @@ EndFunc   ;==>_VK_photosgetAlbumsCount
 ; Author ........: Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 8192.
 ; ============================================================================================================
-Func _VK_wallPost($_sAccessToken, $_sMessage = "", $_sAttashments = "", $_sOwner_ID = "", $_sServices = "", $_sFrom_Group = 0, $_sFriends_Only = 0)
+Func _VK_wallPost($_sMessage = "", $_sAttashments = "", $_sOwner_ID = "", $_sServices = "", $_sFrom_Group = 0, $_sFriends_Only = 0)
 	Local $sReturn, $sResponse
 
 	If $_sAttashments = "" And $_sMessage = "" Then Return SetError(2, 0, -1)
 	If Not $_sMessage = "" Then $_sMessage = BinaryToString(StringToBinary($_sMessage, 4))
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/wall.post.xml?access_token=" & $_sAccessToken[1] & "&message=" & $_sMessage & "&attachments=" & $_sAttashments & "&owner_id=" & $_sOwner_ID & "&services=" & $_sServices & "&from_group=" & $_sFrom_Group & "&friends_only=" & $_sFriends_Only), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/wall.post.xml?access_token=" & $_sAccessToken & "&message=" & $_sMessage & "&attachments=" & $_sAttashments & "&owner_id=" & $_sOwner_ID & "&services=" & $_sServices & "&from_group=" & $_sFrom_Group & "&friends_only=" & $_sFriends_Only), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -1012,7 +1004,7 @@ EndFunc   ;==>_VK_wallPost
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_wallDelete()
 ; Description ...: Удаляет запись со стены пользователя.
-; Syntax.........: _VK_wallDelete($_sAccessToken, $_sPost_ID, $_sOwner_ID = "")
+; Syntax.........: _VK_wallDelete($_sPost_ID, $_sOwner_ID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;                  $_sPost_ID - идентификатор записи на стене пользователя.
 ;                  $_sOwnerID - идентификатор пользователя, на чьей стене необходимо удалить запись. Если параметр не задан, то он считается равным идентификатору текущего пользователя.
@@ -1021,10 +1013,10 @@ EndFunc   ;==>_VK_wallPost
 ; Author ........: Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 8192.
 ; ============================================================================================================
-Func _VK_wallDelete($_sAccessToken, $_sPost_ID, $_sOwner_ID = "")
+Func _VK_wallDelete($_sPost_ID, $_sOwner_ID = "")
 	Local $sReturn, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/wall.delete.xml?access_token=" & $_sAccessToken[1] & "&post_id=" & $_sPost_ID & "&owner_id=" & $_sOwner_ID), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/wall.delete.xml?access_token=" & $_sAccessToken & "&post_id=" & $_sPost_ID & "&owner_id=" & $_sOwner_ID), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -1039,7 +1031,7 @@ EndFunc   ;==>_VK_wallDelete
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_likesAdd()
 ; Description ...: Добавляет указанный объект в список Мне нравится текущего пользователя.
-; Syntax.........: _VK_likesAdd($_sAccessToken, $_sType, $_iItem_id, $_sUID = "")
+; Syntax.........: _VK_likesAdd($_sType, $_iItem_id, $_sUID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;    			   $_sType - идентификатор типа Like-объекта.
 ;				   $_iItem_id - идентификатор Like-объекта.
@@ -1058,10 +1050,10 @@ EndFunc   ;==>_VK_wallDelete
 ;
 ;				   Для вызова этого метода Ваше приложение должно иметь права с битовой маской, содержащей 8192.
 ; ============================================================================================================
-Func _VK_likesAdd($_sAccessToken, $_sType, $_iItem_id, $_sOwnerID = "")
+Func _VK_likesAdd($_sType, $_iItem_id, $_sOwnerID = "")
 	Local $sLikes, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.add.xml?owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.add.xml?owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -1074,7 +1066,7 @@ EndFunc   ;==>_VK_likesAdd
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_likesDelete()
 ; Description ...: Удаляет указанный объект из списка Мне нравится текущего пользователя.
-; Syntax.........: _VK_likesDelete($_sAccessToken, $_sType, $_iItem_id, $_sUID = "")
+; Syntax.........: _VK_likesDelete($_sType, $_iItem_id, $_sUID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;				   $_sType - идентификатор типа Like-объекта.
 ;				   $_iItem_id - идентификатор Like-объекта.
@@ -1093,10 +1085,10 @@ EndFunc   ;==>_VK_likesAdd
 ;
 ;				   Для вызова этого метода Ваше приложение должно иметь права с битовой маской, содержащей 8192.
 ; ============================================================================================================
-Func _VK_likesDelete($_sAccessToken, $_sType, $_iItem_id, $_sOwnerID = "")
+Func _VK_likesDelete($_sType, $_iItem_id, $_sOwnerID = "")
 	Local $sLikes, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.delete.xml?owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.delete.xml?owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -1109,7 +1101,7 @@ EndFunc   ;==>_VK_likesDelete
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_likesIsLiked()
 ; Description ...: Проверяет находится ли объект в списке Мне нравится заданного пользователя.
-; Syntax.........: _VK_likesIsLiked($_sAccessToken, $_sType, $_iItem_id, $_sUserID = "", $_sOwnerID = "")
+; Syntax.........: _VK_likesIsLiked($_sType, $_iItem_id, $_sUserID = "", $_sOwnerID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;				   $_sType - идентификатор типа Like-объекта.
 ;				   $_iItem_id - идентификатор Like-объекта.
@@ -1132,10 +1124,10 @@ EndFunc   ;==>_VK_likesDelete
 ;
 ;				   Для вызова этого метода Ваше приложение должно иметь права с битовой маской, содержащей 8192.
 ; ============================================================================================================
-Func _VK_likesIsLiked($_sAccessToken, $_sType, $_iItem_id, $_sUserID = "", $_sOwnerID = "")
+Func _VK_likesIsLiked($_sType, $_iItem_id, $_sUserID = "", $_sOwnerID = "")
 	Local $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.isLiked.xml?user_id=" & $_sUserID & "&owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken[1]), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.isLiked.xml?user_id=" & $_sUserID & "&owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -1221,7 +1213,7 @@ EndFunc   ;==>_VK_likesGetList
 ; ============================================================================================================
 Func __guiAccessToken($_sURI, $_sGUITitle, $_sRedirect_uri)
     Local $oIE = _IECreateEmbedded()
-    Local $hTimer = TimerInit()
+    Local $hTimer = TimerInit() , $sURL
 
     $_hATgui = GUICreate($_sGUITitle, 800, 450, -1, -1, $WS_SYSMENU)
     GUICtrlCreateObj($oIE, 0, 0, 800, 450)
@@ -1229,7 +1221,7 @@ Func __guiAccessToken($_sURI, $_sGUITitle, $_sRedirect_uri)
     _IENavigate($oIE, $_sURI)
     $sResponse = _IEBodyReadText($oIE)
 
-    If StringInStr($sResponse, "Login success") Then
+    If StringInStr($sResponse, "Пожалуйста, не копируйте") Then
         $sURL = _IEPropertyGet($oIE, "locationurl")
         Return __responseParse($sURL)
     EndIf
@@ -1241,10 +1233,10 @@ Func __guiAccessToken($_sURI, $_sGUITitle, $_sRedirect_uri)
             Exit
         ElseIf TimerDiff($hTimer) > 50 Then
             $sURL = _IEPropertyGet($oIE, "locationurl")
-            If StringInStr($sURL, $_sRedirect_uri & "#") Then
+            If StringInStr($sURL, "#access_token") Then
                 GUISetState(@SW_HIDE)
                 $sResponse = _IEBodyReadText($oIE)
-                If StringInStr($sResponse, "Login success") Then
+                If StringInStr($sResponse, "Пожалуйста, не копируйте") Then
                     GUIDelete($_hATgui)
                     Return __responseParse($sURL)
                 Else
@@ -1277,6 +1269,8 @@ Func __responseParse($_sResponse)
 		$_sStr = StringSplit($aNArray[$i], "=")
 		$aResArray[$i] = $_sStr[2]
 	Next
+
+	$_sAccessToken = $aResArray[1]
 
 	Return $aResArray
 EndFunc   ;==>__responseParse
@@ -1318,7 +1312,7 @@ EndFunc   ;==>_VK_CheckForError
 Func _CreateArray($sString, $sCodeWord)
 	Dim $aRetArray
 
-	$aRetArray = StringRegExp($sString, "<" & $sCodeWord & ">(.*?)</" & $sCodeWord & ">", 3)
+	$aRetArray = StringRegExp($sString, "(?si)<" & $sCodeWord & ">(.*?)</" & $sCodeWord & ">", 3)
 
 	Return $aRetArray
 EndFunc   ;==>_CreateArray
@@ -1326,7 +1320,7 @@ EndFunc   ;==>_CreateArray
 ;===============================================================================
 ; Description:      _StringFormatTime - Get a string representation of a timestamp
 ;					according to the format string given to the function.
-; Syntax:			_StringFormatTime( "format", timestamp)
+; Syntax:			_StringFormatTime("format", timestamp)
 ; Parameter(s):     Format String - A format string to convert the timestamp to.
 ; 									See notes for some of the values that can be
 ; 									used in this string.
