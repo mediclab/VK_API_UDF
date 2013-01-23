@@ -9,7 +9,6 @@
 Global $sSt, $sFriends, $iApp_ID = 2672631
 
 $aAuth = _VK_SignIn($iApp_ID,"notify,status")
-_ArrayDisplay($aAuth)
 
 GUICreate("Testing API UDF VKontakte", 621, 444, 192, 124)
 $Pic1 = GUICtrlCreatePic("", 8, 8, 201, 417)
