@@ -1,3 +1,4 @@
+#include <Array.au3>
 #include <ButtonConstants.au3>
 #include <EditConstants.au3>
 #include <GUIConstantsEx.au3>
@@ -18,6 +19,9 @@ $Hello = GUICtrlCreateLabel("Добро пожаловать! ", 224, 8, 107, 17)
 GUICtrlCreateGroup("Последние аудиозаписи:", 224, 144, 385, 121)
 $aAudios = _VK_audioGet()
 $sAudios = ""
+;_ArrayDisplay($aAudios)
+;$aFriends = _VK_friendsGet("","full")
+;_ArrayDisplay($aFriends)
 For $i = 1 to 5
 		$sAudios &= $aAudios[$i][2] & " - " & $aAudios[$i][3] & @CRLF
 Next

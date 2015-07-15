@@ -106,7 +106,7 @@ Func _VK_getProfiles($_sUIDs, $_sFields = "", $_sName_case = "")
 	Next
 
 	$sUIDsDots = StringRegExpReplace($sUIDsDots, "^[,\h]+|[,\h]+$", "")
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/getProfiles.xml?uids=" & $sUIDsDots & "&fields=" & $_sFields & "&name_case=" & $_sName_case & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/getProfiles.xml?uids=" & $sUIDsDots & "&fields=" & $_sFields & "&name_case=" & $_sName_case & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -140,7 +140,7 @@ EndFunc   ;==>_VK_getProfiles
 Func _VK_getUserSettings($_sUID = "")
 	Local $sReturn, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/getUserSettings.xml?access_token=" & $_sAccessToken & "&uid=" & $_sUID), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/getUserSettings.xml?access_token=" & $_sAccessToken & "&uid=" & $_sUID), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -162,7 +162,7 @@ EndFunc   ;==>_VK_getUserSettings
 Func _VK_getUserBalance($_sAccessToken)
 	Local $sReturn, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/getUserBalance.xml?access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/getUserBalance.xml?access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -238,7 +238,7 @@ Func _VK_friendsGet($_sUID = "", $_sFields = "", $_sName_case = "", $_iCount = "
 	$aFields = StringSplit($aFields, ",", 2)
 
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.get.xml?uid=" & $_sUID & "&fields=" & $_sFields & "&name_case=" & $_sName_case & "&count=" & $_iCount & "&offset=" & $_sOffset & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.get.xml?uid=" & $_sUID & "&fields=" & $_sFields & "&name_case=" & $_sName_case & "&count=" & $_iCount & "&offset=" & $_sOffset & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -272,7 +272,7 @@ EndFunc   ;==>_VK_friendsGet
 Func _VK_friendsGetOnline($_sUID = "")
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.getOnline.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getOnline.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -297,7 +297,7 @@ EndFunc   ;==>_VK_friendsGetOnline
 Func _VK_friendsGetMutual($_sTarget_uid, $_sSource_uid = "")
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.getMutual.xml?access_token=" & $_sAccessToken & "&target_uid=" & $_sTarget_uid & "&source_uid=" & $_sSource_uid), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getMutual.xml?access_token=" & $_sAccessToken & "&target_uid=" & $_sTarget_uid & "&source_uid=" & $_sSource_uid), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -337,7 +337,7 @@ Func _VK_friendsAddList($sName, $_sUIDs)
 
 	$sUIDsDots = StringRegExpReplace($sUIDsDots, "^[,\h]+|[,\h]+$", "")
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/friends.addList.xml?access_token=" & $_sAccessToken & "&name=" & $sName & "&uids=" & $sUIDsDots), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.addList.xml?access_token=" & $_sAccessToken & "&name=" & $sName & "&uids=" & $sUIDsDots), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -375,7 +375,7 @@ EndFunc   ;==>_VK_friendsAddList
 Func _VK_groupsGet($iExtended = 0, $_sUID = "")
 	Local $Temp, $sResponse, $sReturn0, $asFields[8] = ["gid", "name", "screen_name", "is_closed", "is_admin", "photo", "photo_medium", "photo_big"]
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/groups.get.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken & "&extended=" & $iExtended), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.get.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken & "&extended=" & $iExtended), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -446,7 +446,7 @@ Func _VK_groupsGetByID($_sGIDs)
 	Next
 
 	$sGIDsDots = StringRegExpReplace($sGIDsDots, "^[,\h]+|[,\h]+$", "")
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/groups.getById.xml?gids=" & $sGIDsDots & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.getById.xml?gids=" & $sGIDsDots & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -506,7 +506,7 @@ Func _VK_audioGet($_iNeed_User = 0, $_sUID = "", $_sGID = "", $_iAlbumID = "", $
 	Local $Temp, $sResponse, $asFields[6] = ["aid", "owner_id", "artist", "title", "duration", "url"]
 	Local $aOwnerFields[4] = ["id", "photo", "name", "name_gen"]
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/audio.get.xml?access_token=" & $_sAccessToken & "&uid=" & $_sUID & "&gid=" & $_sGID & "&aids=" & $_sAIDs & "&need_user=" & $_iNeed_User & "&album_id=" & $_iAlbumID & "&count=" & $_iCount & "&offset=" & $_iOffset), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.get.xml?access_token=" & $_sAccessToken & "&uid=" & $_sUID & "&gid=" & $_sGID & "&aids=" & $_sAIDs & "&need_user=" & $_iNeed_User & "&album_id=" & $_iAlbumID & "&count=" & $_iCount & "&offset=" & $_iOffset), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -547,16 +547,27 @@ EndFunc   ;==>_VK_audioGet
 ; Description ...: Получает статус пользователя.
 ; Syntax.........: _VK_statusGet($_sUID = "")
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;                  $_sUID - UID пользователя у которого требуется получить статус. По умолчанию - текущий пользователь
+;                  $_sUID - UID пользователя или GID группы у которого(й) требуется получить статус. По умолчанию - текущий пользователь
+;				   $_bGID - установить True если необходимо получить статус группы.
 ; Return values .: Успех - Строка со статусом и @error = 0.
 ;                  Неудача - Ошибка выданная сайтом и @error = 1
+;				   @error = 2 присваивается в случае если не было задано ID группу у которой необходимо получить статус.
 ; Author ........: Fever, Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 1024.
 ; ============================================================================================================
-Func _VK_statusGet($_sUID = "")
+Func _VK_statusGet($_sUID = "", $_bGID = False)
 	Local $sStatus, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/status.get.xml?uid=" & $_sUID & "&access_token=" & $_sAccessToken), 4)
+	If Not $_bGID Then
+		$sResponse = BinaryToString(InetRead("https://api.vk.com/method/status.get.xml?user_id=" & $_sUID & "&access_token=" & $_sAccessToken), 4)
+	Else
+		If $_sUID = "" Then
+			SetError(2, 0, "Group ID is empty!")
+			Return ""
+		EndIf
+		$sResponse = BinaryToString(InetRead("https://api.vk.com/method/status.get.xml?group_id=" & $_sUID & "&access_token=" & $_sAccessToken), 4)
+	EndIf
+
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -581,12 +592,17 @@ EndFunc   ;==>_VK_statusGet
 ; Author ........: Fever, Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 1024.
 ; ============================================================================================================
-Func _VK_statusSet($_sText = "")
+Func _VK_statusSet($_sText = "", $_sGID = "")
 	Local $sStatus, $sResponse
 
 	$_sText = _Encoding_URIEncode($_sText)
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/status.set.xml?text=" & $_sText & "&access_token=" & $_sAccessToken), 4)
+	If $_sGID Then
+		$sResponse = BinaryToString(InetRead("https://api.vk.com/method/status.set.xml?text=" & $_sText & "&group_id=" & $_sGID & "&access_token=" & $_sAccessToken), 4)
+	Else
+		$sResponse = BinaryToString(InetRead("https://api.vk.com/method/status.set.xml?text=" & $_sText & "&access_token=" & $_sAccessToken), 4)
+	EndIf
+
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -634,7 +650,7 @@ Func _VK_photosGetAlbums($_iNeed_Covers = 0, $_sUID = "", $_sGID = "", $_sAIDs =
 		Dim $asFields[9] = ["aid", "owner_id", "title", "description", "created", "updated", "size", "privacy", "thumb_id"]
 	EndIf
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getAlbums.xml?uid=" & $_sUID & "&aids=" & $_sAIDs & "&gid=" & $_sGID & "&need_covers=" & $_iNeed_Covers & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getAlbums.xml?uid=" & $_sUID & "&aids=" & $_sAIDs & "&gid=" & $_sGID & "&need_covers=" & $_iNeed_Covers & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -698,7 +714,7 @@ Func _VK_photosGet($_sUID, $_sGID, $_sAID, $_iExtended = 0, $_iPIDs = "", $_iLim
 		Dim $asFields[9] = ["aid", "owner_id", "src", "src_small", "src_big", "src_xbig", "src_xxbig", "text", "created"]
 	EndIf
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.get.xml?uid=" & $_sUID & "&aid=" & $_sAID & "&gid=" & $_sGID & "&pids=" & $_iPIDs & "&extended=" & $_iExtended & "&limit=" & $_iLimit & "&offset=" & $_iOffset & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.get.xml?uid=" & $_sUID & "&aid=" & $_sAID & "&gid=" & $_sGID & "&pids=" & $_iPIDs & "&extended=" & $_iExtended & "&limit=" & $_iLimit & "&offset=" & $_iOffset & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -737,7 +753,7 @@ EndFunc   ;==>_VK_photosGet
 Func _VK_photosGetAlbumsCount($_sUID = "", $_sGID = "")
 	Local $sCount, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getAlbumsCount.xml?uid=" & $_sUID & "&gid=" & $_sGID & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getAlbumsCount.xml?uid=" & $_sUID & "&gid=" & $_sGID & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -796,7 +812,7 @@ Func _VK_photosGetById($_sPhotos, $_iExtended = 0)
 	$sPhotosDots = StringRegExpReplace($sPhotosDots, "^[,\h]+|[,\h]+$", "")
 
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getById.xml?photos=" & $sPhotosDots & "&extended=" & $_iExtended & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getById.xml?photos=" & $sPhotosDots & "&extended=" & $_iExtended & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -857,7 +873,7 @@ Func _VK_photosGetAll($_iExtended = 0, $_sOwnerID = "", $_sCount = 100, $_sOffse
 		Dim $asFields[10] = ["pid", "aid", "owner_id", "src", "src_small", "src_big", "src_xbig", "src_xxbig", "text", "created"]
 	EndIf
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.getAll.xml?access_token=" & $_sAccessToken & "&count=" & $_sCount & "&owner_id=" & $_sOwnerID & "&extended=" & $_iExtended & "&offset=" & $_sOffset), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getAll.xml?access_token=" & $_sAccessToken & "&count=" & $_sCount & "&owner_id=" & $_sOwnerID & "&extended=" & $_iExtended & "&offset=" & $_sOffset), 4)
 	ConsoleWrite($sResponse)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -912,7 +928,7 @@ Func _VK_photosCreateAlbum($_sTitle, $_sDescription = "", $_iPrivacy = 0, $_iCom
 
 	If Not $_sDescription = "" Then $_sDescription = BinaryToString(StringToBinary($_sDescription, 4))
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.createAlbum.xml?title=" & $_sTitle & "&description=" & $_sDescription & "&privacy=" & $_iPrivacy & "&comment_privacy=" & $_iComment_Privacy & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.createAlbum.xml?title=" & $_sTitle & "&description=" & $_sDescription & "&privacy=" & $_iPrivacy & "&comment_privacy=" & $_iComment_Privacy & "&access_token=" & $_sAccessToken), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -952,7 +968,7 @@ Func _VK_photosEditAlbum($_sAID, $_sTitle, $_sDescription = -1, $_iPrivacy = -1,
 	If Not $_iPrivacy = -1 Then $sQuery &= "&privacy=" & $_iPrivacy
 	If Not $_iComment_Privacy = -1 Then $sQuery &= "&comment_privacy=" & $_iComment_Privacy
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/photos.editAlbum.xml?title=" & $_sTitle & "&access_token=" & $_sAccessToken & $sQuery), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.editAlbum.xml?title=" & $_sTitle & "&access_token=" & $_sAccessToken & $sQuery), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -994,7 +1010,7 @@ Func _VK_wallPost($_sMessage = "", $_sAttashments = "", $_sOwner_ID = "", $_sSer
 	If $_sAttashments = "" And $_sMessage = "" Then Return SetError(2, 0, -1)
 	If Not $_sMessage = "" Then $_sMessage = BinaryToString(StringToBinary($_sMessage, 4))
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/wall.post.xml?access_token=" & $_sAccessToken & "&message=" & $_sMessage & "&attachments=" & $_sAttashments & "&owner_id=" & $_sOwner_ID & "&services=" & $_sServices & "&from_group=" & $_sFrom_Group & "&friends_only=" & $_sFriends_Only), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.post.xml?access_token=" & $_sAccessToken & "&message=" & $_sMessage & "&attachments=" & $_sAttashments & "&owner_id=" & $_sOwner_ID & "&services=" & $_sServices & "&from_group=" & $_sFrom_Group & "&friends_only=" & $_sFriends_Only), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -1018,7 +1034,7 @@ EndFunc   ;==>_VK_wallPost
 Func _VK_wallDelete($_sPost_ID, $_sOwner_ID = "")
 	Local $sReturn, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/wall.delete.xml?access_token=" & $_sAccessToken & "&post_id=" & $_sPost_ID & "&owner_id=" & $_sOwner_ID), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.delete.xml?access_token=" & $_sAccessToken & "&post_id=" & $_sPost_ID & "&owner_id=" & $_sOwner_ID), 4)
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else
@@ -1055,7 +1071,7 @@ EndFunc   ;==>_VK_wallDelete
 Func _VK_likesAdd($_sType, $_iItem_id, $_sOwnerID = "")
 	Local $sLikes, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.add.xml?owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/likes.add.xml?owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -1090,7 +1106,7 @@ EndFunc   ;==>_VK_likesAdd
 Func _VK_likesDelete($_sType, $_iItem_id, $_sOwnerID = "")
 	Local $sLikes, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.delete.xml?owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/likes.delete.xml?owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -1129,7 +1145,7 @@ EndFunc   ;==>_VK_likesDelete
 Func _VK_likesIsLiked($_sType, $_iItem_id, $_sUserID = "", $_sOwnerID = "")
 	Local $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.isLiked.xml?user_id=" & $_sUserID & "&owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/likes.isLiked.xml?user_id=" & $_sUserID & "&owner_id=" & $_sOwnerID & "&type=" & $_sType & "&item_id" & $_iItem_id & "&access_token=" & $_sAccessToken), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
@@ -1184,7 +1200,7 @@ EndFunc   ;==>_VK_likesIsLiked
 Func _VK_likesGetList($_sType, $_sOwnerID = "", $_iItem_id = "", $_sPageURL = "", $_sFilter = "likes", $_iFriendsOnly = 0, $_iOffset = 0, $_iCount = 100)
 	Local $sResponse, $iCount
 
-	$sResponse = BinaryToString(InetRead("https://api.vkontakte.ru/method/likes.getList.xml?type=" & $_sType & "&owner_id=" & $_sOwnerID & "&item_id=" & $_iItem_id & "&page_url=" & $_sPageURL & "&filter=" & $_sFilter & "&friends_only" & $_iFriendsOnly & "&offset" & $_iOffset & "&count" & $_iCount), 4)
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/likes.getList.xml?type=" & $_sType & "&owner_id=" & $_sOwnerID & "&item_id=" & $_iItem_id & "&page_url=" & $_sPageURL & "&filter=" & $_sFilter & "&friends_only" & $_iFriendsOnly & "&offset" & $_iOffset & "&count" & $_iCount), 4)
 
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
