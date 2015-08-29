@@ -4,7 +4,7 @@
 #include <GUIConstantsEx.au3>
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
-#include "../API/VK_API.au3"
+#include "../API/VK_API_New.au3"
 
 Global $sSt, $sFriends, $iApp_ID = 2672631
 
@@ -17,14 +17,14 @@ GUICtrlSetData($idStatus,_VK_statusGet())
 $ChangeStatus = GUICtrlCreateButton("Сменить статус", 488, 104, 121, 25)
 $Hello = GUICtrlCreateLabel("Добро пожаловать! ", 224, 8, 107, 17)
 GUICtrlCreateGroup("Последние аудиозаписи:", 224, 144, 385, 121)
-$aAudios = _VK_audioGet()
-$sAudios = ""
+;$aAudios = _VK_audioGet()
+;$sAudios = ""
 ;_ArrayDisplay($aAudios)
 ;$aFriends = _VK_friendsGet("","full")
 ;_ArrayDisplay($aFriends)
-For $i = 1 to 5
-		$sAudios &= $aAudios[$i][2] & " - " & $aAudios[$i][3] & @CRLF
-Next
+;For $i = 1 to 5
+;		$sAudios &= $aAudios[$i][2] & " - " & $aAudios[$i][3] & @CRLF
+;Next
 $Last_Audio = GUICtrlCreateLabel($sAudios, 240, 168, 356, 81)
 GUICtrlCreateGroup("Последние новости:", 224, 280, 385, 145)
 $Last_News = GUICtrlCreateLabel("", 240, 304, 356, 105)

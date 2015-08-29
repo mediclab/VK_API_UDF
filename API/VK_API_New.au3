@@ -43,13 +43,13 @@ EndFunc   ;==>_VK_SignIn
 Func _VK_users_get()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/users.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("users.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+
+	Return $asReturn
 EndFunc   ;==>_VK_users_get
 
 
@@ -68,13 +68,13 @@ EndFunc   ;==>_VK_users_get
 Func _VK_users_search()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/users.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("users.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_users_search
 
 
@@ -93,13 +93,13 @@ EndFunc   ;==>_VK_users_search
 Func _VK_users_isAppUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/users.isAppUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("users.isAppUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_users_isAppUser
 
 
@@ -118,13 +118,13 @@ EndFunc   ;==>_VK_users_isAppUser
 Func _VK_users_getSubscriptions()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/users.getSubscriptions.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("users.getSubscriptions.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_users_getSubscriptions
 
 
@@ -143,13 +143,13 @@ EndFunc   ;==>_VK_users_getSubscriptions
 Func _VK_users_getFollowers()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/users.getFollowers.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("users.getFollowers.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_users_getFollowers
 
 
@@ -168,13 +168,13 @@ EndFunc   ;==>_VK_users_getFollowers
 Func _VK_users_report()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/users.report.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("users.report.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_users_report
 
 
@@ -193,13 +193,13 @@ EndFunc   ;==>_VK_users_report
 Func _VK_users_getNearby()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/users.getNearby.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("users.getNearby.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_users_getNearby
 
 #endregion User Functions
@@ -220,13 +220,13 @@ EndFunc   ;==>_VK_users_getNearby
 Func _VK_auth_checkPhone()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/auth.checkPhone.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("auth.checkPhone.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_auth_checkPhone
 
 
@@ -245,13 +245,13 @@ EndFunc   ;==>_VK_auth_checkPhone
 Func _VK_auth_signup()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/auth.signup.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("auth.signup.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_auth_signup
 
 
@@ -270,13 +270,13 @@ EndFunc   ;==>_VK_auth_signup
 Func _VK_auth_confirm()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/auth.confirm.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("auth.confirm.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_auth_confirm
 
 
@@ -295,13 +295,13 @@ EndFunc   ;==>_VK_auth_confirm
 Func _VK_auth_restore()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/auth.restore.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("auth.restore.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_auth_restore
 
 #endregion Authorize Functions
@@ -322,13 +322,13 @@ EndFunc   ;==>_VK_auth_restore
 Func _VK_wall_get()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_get
 
 
@@ -347,13 +347,13 @@ EndFunc   ;==>_VK_wall_get
 Func _VK_wall_search()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_search
 
 
@@ -372,13 +372,13 @@ EndFunc   ;==>_VK_wall_search
 Func _VK_wall_getById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.getById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.getById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_getById
 
 
@@ -397,13 +397,13 @@ EndFunc   ;==>_VK_wall_getById
 Func _VK_wall_post()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.post.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.post.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_post
 
 
@@ -422,13 +422,13 @@ EndFunc   ;==>_VK_wall_post
 Func _VK_wall_repost()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.repost.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.repost.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_repost
 
 
@@ -447,13 +447,13 @@ EndFunc   ;==>_VK_wall_repost
 Func _VK_wall_getReposts()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.getReposts.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.getReposts.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_getReposts
 
 
@@ -472,13 +472,13 @@ EndFunc   ;==>_VK_wall_getReposts
 Func _VK_wall_edit()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.edit.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.edit.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_edit
 
 
@@ -497,13 +497,13 @@ EndFunc   ;==>_VK_wall_edit
 Func _VK_wall_delete()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.delete.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.delete.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_delete
 
 
@@ -522,13 +522,13 @@ EndFunc   ;==>_VK_wall_delete
 Func _VK_wall_restore()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.restore.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.restore.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_restore
 
 
@@ -547,13 +547,13 @@ EndFunc   ;==>_VK_wall_restore
 Func _VK_wall_pin()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.pin.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.pin.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_pin
 
 
@@ -572,13 +572,13 @@ EndFunc   ;==>_VK_wall_pin
 Func _VK_wall_unpin()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.unpin.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.unpin.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_unpin
 
 
@@ -597,13 +597,13 @@ EndFunc   ;==>_VK_wall_unpin
 Func _VK_wall_getComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.getComments.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.getComments.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_getComments
 
 
@@ -622,13 +622,13 @@ EndFunc   ;==>_VK_wall_getComments
 Func _VK_wall_addComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.addComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.addComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_addComment
 
 
@@ -647,13 +647,13 @@ EndFunc   ;==>_VK_wall_addComment
 Func _VK_wall_editComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.editComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.editComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_editComment
 
 
@@ -672,13 +672,13 @@ EndFunc   ;==>_VK_wall_editComment
 Func _VK_wall_deleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.deleteComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.deleteComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_walldeleteComment
 
 
@@ -697,13 +697,13 @@ EndFunc   ;==>_VK_walldeleteComment
 Func _VK_wall_restoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.restoreComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.restoreComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_restoreComment
 
 
@@ -722,13 +722,13 @@ EndFunc   ;==>_VK_wall_restoreComment
 Func _VK_wall_reportPost()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.reportPost.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.reportPost.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_reportPost
 
 
@@ -747,13 +747,13 @@ EndFunc   ;==>_VK_wall_reportPost
 Func _VK_wall_reportComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/wall.reportComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("wall.reportComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_wall_reportComment
 
 #endregion Wall Functions
@@ -774,13 +774,13 @@ EndFunc   ;==>_VK_wall_reportComment
 Func _VK_photoscreateAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.createAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.createAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photoscreateAlbum
 
 
@@ -799,13 +799,13 @@ EndFunc   ;==>_VK_photoscreateAlbum
 Func _VK_photoseditAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.editAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.editAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photoseditAlbum
 
 
@@ -824,13 +824,13 @@ EndFunc   ;==>_VK_photoseditAlbum
 Func _VK_photosgetAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getAlbums.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getAlbums.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetAlbums
 
 
@@ -849,13 +849,13 @@ EndFunc   ;==>_VK_photosgetAlbums
 Func _VK_photosget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosget
 
 
@@ -874,13 +874,13 @@ EndFunc   ;==>_VK_photosget
 Func _VK_photosgetAlbumsCount()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getAlbumsCount.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getAlbumsCount.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetAlbumsCount
 
 
@@ -899,13 +899,13 @@ EndFunc   ;==>_VK_photosgetAlbumsCount
 Func _VK_photosgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetById
 
 
@@ -924,13 +924,13 @@ EndFunc   ;==>_VK_photosgetById
 Func _VK_photosgetUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getUploadServer.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getUploadServer.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetUploadServer
 
 
@@ -949,13 +949,13 @@ EndFunc   ;==>_VK_photosgetUploadServer
 Func _VK_photosgetOwnerPhotoUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getOwnerPhotoUploadServer.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getOwnerPhotoUploadServer.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetOwnerPhotoUploadServer
 
 
@@ -974,13 +974,13 @@ EndFunc   ;==>_VK_photosgetOwnerPhotoUploadServer
 Func _VK_photosgetChatUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getChatUploadServer.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getChatUploadServer.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetChatUploadServer
 
 
@@ -999,13 +999,13 @@ EndFunc   ;==>_VK_photosgetChatUploadServer
 Func _VK_photossaveOwnerPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.saveOwnerPhoto.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.saveOwnerPhoto.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photossaveOwnerPhoto
 
 
@@ -1024,13 +1024,13 @@ EndFunc   ;==>_VK_photossaveOwnerPhoto
 Func _VK_photossaveWallPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.saveWallPhoto.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.saveWallPhoto.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photossaveWallPhoto
 
 
@@ -1049,13 +1049,13 @@ EndFunc   ;==>_VK_photossaveWallPhoto
 Func _VK_photosgetWallUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getWallUploadServer.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getWallUploadServer.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetWallUploadServer
 
 
@@ -1074,13 +1074,13 @@ EndFunc   ;==>_VK_photosgetWallUploadServer
 Func _VK_photosgetMessagesUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getMessagesUploadServer.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getMessagesUploadServer.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetMessagesUploadServer
 
 
@@ -1099,13 +1099,13 @@ EndFunc   ;==>_VK_photosgetMessagesUploadServer
 Func _VK_photossaveMessagesPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.saveMessagesPhoto.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.saveMessagesPhoto.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photossaveMessagesPhoto
 
 
@@ -1124,13 +1124,13 @@ EndFunc   ;==>_VK_photossaveMessagesPhoto
 Func _VK_photosreport()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.report.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.report.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosreport
 
 
@@ -1149,13 +1149,13 @@ EndFunc   ;==>_VK_photosreport
 Func _VK_photosreportComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.reportComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.reportComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosreportComment
 
 
@@ -1174,13 +1174,13 @@ EndFunc   ;==>_VK_photosreportComment
 Func _VK_photossearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photossearch
 
 
@@ -1199,13 +1199,13 @@ EndFunc   ;==>_VK_photossearch
 Func _VK_photossave()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.save.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.save.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photossave
 
 
@@ -1224,13 +1224,13 @@ EndFunc   ;==>_VK_photossave
 Func _VK_photoscopy()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.copy.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.copy.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photoscopy
 
 
@@ -1249,13 +1249,13 @@ EndFunc   ;==>_VK_photoscopy
 Func _VK_photosedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.edit.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.edit.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosedit
 
 
@@ -1274,13 +1274,13 @@ EndFunc   ;==>_VK_photosedit
 Func _VK_photosmove()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.move.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.move.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosmove
 
 
@@ -1299,13 +1299,13 @@ EndFunc   ;==>_VK_photosmove
 Func _VK_photosmakeCover()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.makeCover.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.makeCover.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosmakeCover
 
 
@@ -1324,13 +1324,13 @@ EndFunc   ;==>_VK_photosmakeCover
 Func _VK_photosreorderAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.reorderAlbums.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.reorderAlbums.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosreorderAlbums
 
 
@@ -1349,13 +1349,13 @@ EndFunc   ;==>_VK_photosreorderAlbums
 Func _VK_photosreorderPhotos()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.reorderPhotos.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.reorderPhotos.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosreorderPhotos
 
 
@@ -1374,13 +1374,13 @@ EndFunc   ;==>_VK_photosreorderPhotos
 Func _VK_photosgetAll()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getAll.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getAll.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetAll
 
 
@@ -1399,13 +1399,13 @@ EndFunc   ;==>_VK_photosgetAll
 Func _VK_photosgetUserPhotos()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getUserPhotos.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getUserPhotos.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetUserPhotos
 
 
@@ -1424,13 +1424,13 @@ EndFunc   ;==>_VK_photosgetUserPhotos
 Func _VK_photosdeleteAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.deleteAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.deleteAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosdeleteAlbum
 
 
@@ -1449,13 +1449,13 @@ EndFunc   ;==>_VK_photosdeleteAlbum
 Func _VK_photosdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.delete.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.delete.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosdelete
 
 
@@ -1474,13 +1474,13 @@ EndFunc   ;==>_VK_photosdelete
 Func _VK_photosrestore()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.restore.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.restore.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosrestore
 
 
@@ -1499,13 +1499,13 @@ EndFunc   ;==>_VK_photosrestore
 Func _VK_photosconfirmTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.confirmTag.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.confirmTag.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosconfirmTag
 
 
@@ -1524,13 +1524,13 @@ EndFunc   ;==>_VK_photosconfirmTag
 Func _VK_photosgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getComments.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getComments.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetComments
 
 
@@ -1549,13 +1549,13 @@ EndFunc   ;==>_VK_photosgetComments
 Func _VK_photosgetAllComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getAllComments.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getAllComments.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetAllComments
 
 
@@ -1574,13 +1574,13 @@ EndFunc   ;==>_VK_photosgetAllComments
 Func _VK_photoscreateComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.createComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.createComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photoscreateComment
 
 
@@ -1599,13 +1599,13 @@ EndFunc   ;==>_VK_photoscreateComment
 Func _VK_photosdeleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.deleteComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.deleteComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosdeleteComment
 
 
@@ -1624,13 +1624,13 @@ EndFunc   ;==>_VK_photosdeleteComment
 Func _VK_photosrestoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.restoreComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.restoreComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosrestoreComment
 
 
@@ -1649,13 +1649,13 @@ EndFunc   ;==>_VK_photosrestoreComment
 Func _VK_photoseditComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.editComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.editComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photoseditComment
 
 
@@ -1674,13 +1674,13 @@ EndFunc   ;==>_VK_photoseditComment
 Func _VK_photosgetTags()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getTags.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getTags.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetTags
 
 
@@ -1699,13 +1699,13 @@ EndFunc   ;==>_VK_photosgetTags
 Func _VK_photosputTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.putTag.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.putTag.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosputTag
 
 
@@ -1724,13 +1724,13 @@ EndFunc   ;==>_VK_photosputTag
 Func _VK_photosremoveTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.removeTag.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.removeTag.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosremoveTag
 
 
@@ -1749,13 +1749,13 @@ EndFunc   ;==>_VK_photosremoveTag
 Func _VK_photosgetNewTags()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/photos.getNewTags.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("photos.getNewTags.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_photosgetNewTags
 
 #endregion Photos Functions
@@ -1776,13 +1776,13 @@ EndFunc   ;==>_VK_photosgetNewTags
 Func _VK_friendsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsget
 
 
@@ -1801,13 +1801,13 @@ EndFunc   ;==>_VK_friendsget
 Func _VK_friendsgetOnline()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getOnline.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.getOnline.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsgetOnline
 
 
@@ -1826,13 +1826,13 @@ EndFunc   ;==>_VK_friendsgetOnline
 Func _VK_friendsgetMutual()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getMutual.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.getMutual.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsgetMutual
 
 
@@ -1851,13 +1851,13 @@ EndFunc   ;==>_VK_friendsgetMutual
 Func _VK_friendsgetRecent()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getRecent.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.getRecent.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsgetRecent
 
 
@@ -1876,13 +1876,13 @@ EndFunc   ;==>_VK_friendsgetRecent
 Func _VK_friendsgetRequests()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getRequests.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.getRequests.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsgetRequests
 
 
@@ -1901,13 +1901,13 @@ EndFunc   ;==>_VK_friendsgetRequests
 Func _VK_friendsadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.add.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.add.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsadd
 
 
@@ -1926,13 +1926,13 @@ EndFunc   ;==>_VK_friendsadd
 Func _VK_friendsedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.edit.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.edit.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsedit
 
 
@@ -1951,13 +1951,13 @@ EndFunc   ;==>_VK_friendsedit
 Func _VK_friendsdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.delete.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.delete.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsdelete
 
 
@@ -1976,13 +1976,13 @@ EndFunc   ;==>_VK_friendsdelete
 Func _VK_friendsgetLists()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getLists.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.getLists.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsgetLists
 
 
@@ -2001,13 +2001,13 @@ EndFunc   ;==>_VK_friendsgetLists
 Func _VK_friendsaddList()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.addList.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.addList.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsaddList
 
 
@@ -2026,13 +2026,13 @@ EndFunc   ;==>_VK_friendsaddList
 Func _VK_friendseditList()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.editList.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.editList.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendseditList
 
 
@@ -2051,13 +2051,13 @@ EndFunc   ;==>_VK_friendseditList
 Func _VK_friendsdeleteList()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.deleteList.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.deleteList.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsdeleteList
 
 
@@ -2076,13 +2076,13 @@ EndFunc   ;==>_VK_friendsdeleteList
 Func _VK_friendsgetAppUsers()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getAppUsers.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.getAppUsers.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsgetAppUsers
 
 
@@ -2101,13 +2101,13 @@ EndFunc   ;==>_VK_friendsgetAppUsers
 Func _VK_friendsgetByPhones()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getByPhones.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.getByPhones.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsgetByPhones
 
 
@@ -2126,13 +2126,13 @@ EndFunc   ;==>_VK_friendsgetByPhones
 Func _VK_friendsdeleteAllRequests()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.deleteAllRequests.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.deleteAllRequests.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsdeleteAllRequests
 
 
@@ -2151,13 +2151,13 @@ EndFunc   ;==>_VK_friendsdeleteAllRequests
 Func _VK_friendsgetSuggestions()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getSuggestions.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.getSuggestions.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsgetSuggestions
 
 
@@ -2176,13 +2176,13 @@ EndFunc   ;==>_VK_friendsgetSuggestions
 Func _VK_friendsareFriends()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.areFriends.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.areFriends.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsareFriends
 
 
@@ -2201,13 +2201,13 @@ EndFunc   ;==>_VK_friendsareFriends
 Func _VK_friendsgetAvailableForCall()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.getAvailableForCall.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.getAvailableForCall.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendsgetAvailableForCall
 
 
@@ -2227,13 +2227,13 @@ EndFunc   ;==>_VK_friendsgetAvailableForCall
 Func _VK_friendssearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/friends.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("friends.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_friendssearch
 
 #endregion Friends Functions
@@ -2254,13 +2254,13 @@ EndFunc   ;==>_VK_friendssearch
 Func _VK_widgetsgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/widgets.getComments.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("widgets.getComments.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_widgetsgetComments
 
 
@@ -2279,13 +2279,13 @@ EndFunc   ;==>_VK_widgetsgetComments
 Func _VK_widgetsgetPages()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/widgets.getPages.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("widgets.getPages.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_widgetsgetPages
 
 #endregion Widget Functions
@@ -2306,13 +2306,13 @@ EndFunc   ;==>_VK_widgetsgetPages
 Func _VK_storageget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/storage.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("storage.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_storageget
 
 
@@ -2331,13 +2331,13 @@ EndFunc   ;==>_VK_storageget
 Func _VK_storageset()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/storage.set.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("storage.set.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_storageset
 
 
@@ -2356,13 +2356,13 @@ EndFunc   ;==>_VK_storageset
 Func _VK_storagegetKeys()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/storage.getKeys.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("storage.getKeys.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_storagegetKeys
 
 #endregion Storage Functions
@@ -2371,50 +2371,64 @@ EndFunc   ;==>_VK_storagegetKeys
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_statusget()
-; Description ...: Получает текст статуса пользователя или сообщества.
-; Syntax.........: _VK_statusget()
+; Description ...: Получает статус пользователя.
+; Syntax.........: _VK_statusGet($_sUID = "", $_bGID = False)
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
-; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+;                  $_sUID - UID пользователя или GID группы у которого(й) требуется получить статус. По умолчанию - текущий пользователь
+;				   $_bGID - установить True если необходимо получить статус группы.
+; Return values .: Успех - Строка со статусом и @error = 0.
+;                  Неудача - Ошибка выданная сайтом и @error = Код ошибки с сайта
+;				   @error = 20000 присваивается в случае если не было задано ID группу у которой необходимо получить статус.
+; Author ........: Fever, Medic84
+; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей status.
 ; ============================================================================================================
-Func _VK_statusget()
-	Local $sResponse, $asReturn
+Func _VK_statusGet($_sUID = "", $_bGID = False)
+	Local $sResponse, $sStatus
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/status.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
+	$sResponse = _VK_SendRequest("status.get.xml", "")
+
+	If Not $_bGID Then
+		$sResponse = _VK_SendRequest("status.get.xml","user_id=" & $_sUID)
 	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
+		If $_sUID = "" Then Return SetError(20000, 0, "Error: Group ID is empty!")
+
+		$sResponse = _VK_SendRequest("status.get.xml","group_id=" & $_sUID)
 	EndIf
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$sStatus = _CreateArray($sResponse, "text")
+
+	Return $sStatus[0]
+
 EndFunc   ;==>_VK_statusget
 
 
 
 ; #FUNCTION# =================================================================================================
-; Name...........:  _VK_statusset()
+; Name...........:  _VK_statusSet()
 ; Description ...: Устанавливает новый статус текущему пользователю или сообществу.
-; Syntax.........: _VK_statusset()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
-; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Syntax.........: _VK_statusSet($_sText = "")
+; Parameters ....: $_sText - текст статуса, который необходимо установить.  По умолчанию - очищение статуса
+;                  $_sGID - ID группы для которой необходимо установить статус. По умолчанию - текущий пользователь
+; Return values .: Успех - 1 и @error = 0.
+;                  Неудача - Ошибка выданная сайтом и @error = Код ошибки с сайта
+; Author ........: Fever, Medic84
+; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей status.
 ; ============================================================================================================
-Func _VK_statusset()
-	Local $sResponse, $asReturn
+Func _VK_statusSet($_sText = "", $_sGID = "")
+	Local $sStatus, $sResponse
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/status.set.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$_sText = _Encoding_URIEncode($_sText)
+	If $_sGID Then $_sText &= "&group_id=" & $_sGID
+
+	$sResponse = _VK_SendRequest("status.set.xml", "text=" & $_sText)
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$sStatus = _CreateArray($sResponse, "response")
+	Return $sStatus[0]
+
 EndFunc   ;==>_VK_statusset
 
 #endregion Status Functions
@@ -2422,9 +2436,9 @@ EndFunc   ;==>_VK_statusset
 #region Audio Functions
 
 ; #FUNCTION# =================================================================================================
-; Name...........:  _VK_audioget()
+; Name...........:  _VK_audioGet()
 ; Description ...: Возвращает список аудиозаписей пользователя или сообщества.
-; Syntax.........: _VK_audioget()
+; Syntax.........: _VK_audioGet()
 ; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
 ;
 ; Return values .: Успех - Массив идентификаторов и @error = 0.
@@ -2432,16 +2446,16 @@ EndFunc   ;==>_VK_statusset
 ; Author ........: Medic84
 ; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
 ; ============================================================================================================
-Func _VK_audioget()
+Func _VK_audioGet()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audioget
 
 
@@ -2460,13 +2474,13 @@ EndFunc   ;==>_VK_audioget
 Func _VK_audiogetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.getById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.getById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiogetById
 
 
@@ -2485,13 +2499,13 @@ EndFunc   ;==>_VK_audiogetById
 Func _VK_audiogetLyrics()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.getLyrics.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.getLyrics.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiogetLyrics
 
 
@@ -2510,13 +2524,13 @@ EndFunc   ;==>_VK_audiogetLyrics
 Func _VK_audiosearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiosearch
 
 
@@ -2535,13 +2549,13 @@ EndFunc   ;==>_VK_audiosearch
 Func _VK_audiogetUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.getUploadServer.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.getUploadServer.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiogetUploadServer
 
 
@@ -2560,13 +2574,13 @@ EndFunc   ;==>_VK_audiogetUploadServer
 Func _VK_audiosave()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.save.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.save.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiosave
 
 
@@ -2585,13 +2599,13 @@ EndFunc   ;==>_VK_audiosave
 Func _VK_audioadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.add.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.add.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audioadd
 
 
@@ -2610,13 +2624,13 @@ EndFunc   ;==>_VK_audioadd
 Func _VK_audiodelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.delete.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.delete.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiodelete
 
 
@@ -2635,13 +2649,13 @@ EndFunc   ;==>_VK_audiodelete
 Func _VK_audioedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.edit.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.edit.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audioedit
 
 
@@ -2660,13 +2674,13 @@ EndFunc   ;==>_VK_audioedit
 Func _VK_audioreorder()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.reorder.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.reorder.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audioreorder
 
 
@@ -2685,13 +2699,13 @@ EndFunc   ;==>_VK_audioreorder
 Func _VK_audiorestore()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.restore.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.restore.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiorestore
 
 
@@ -2710,13 +2724,13 @@ EndFunc   ;==>_VK_audiorestore
 Func _VK_audiogetAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.getAlbums.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.getAlbums.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiogetAlbums
 
 
@@ -2735,13 +2749,13 @@ EndFunc   ;==>_VK_audiogetAlbums
 Func _VK_audioaddAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.addAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.addAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audioaddAlbum
 
 
@@ -2760,13 +2774,13 @@ EndFunc   ;==>_VK_audioaddAlbum
 Func _VK_audioeditAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.editAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.editAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audioeditAlbum
 
 
@@ -2785,13 +2799,13 @@ EndFunc   ;==>_VK_audioeditAlbum
 Func _VK_audiodeleteAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.deleteAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.deleteAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiodeleteAlbum
 
 
@@ -2810,13 +2824,13 @@ EndFunc   ;==>_VK_audiodeleteAlbum
 Func _VK_audiomoveToAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.moveToAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.moveToAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiomoveToAlbum
 
 
@@ -2835,13 +2849,13 @@ EndFunc   ;==>_VK_audiomoveToAlbum
 Func _VK_audiosetBroadcast()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.setBroadcast.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.setBroadcast.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiosetBroadcast
 
 
@@ -2860,13 +2874,13 @@ EndFunc   ;==>_VK_audiosetBroadcast
 Func _VK_audiogetBroadcastList()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.getBroadcastList.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.getBroadcastList.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiogetBroadcastList
 
 
@@ -2885,13 +2899,13 @@ EndFunc   ;==>_VK_audiogetBroadcastList
 Func _VK_audiogetRecommendations()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.getRecommendations.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.getRecommendations.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiogetRecommendations
 
 
@@ -2910,13 +2924,13 @@ EndFunc   ;==>_VK_audiogetRecommendations
 Func _VK_audiogetPopular()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.getPopular.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.getPopular.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiogetPopular
 
 
@@ -2935,13 +2949,13 @@ EndFunc   ;==>_VK_audiogetPopular
 Func _VK_audiogetCount()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.getCount.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("audio.getCount.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_audiogetCount
 
 #endregion Audio Functions
@@ -2962,13 +2976,13 @@ EndFunc   ;==>_VK_audiogetCount
 Func _VK_pagesget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/pages.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("pages.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pagesget
 
 
@@ -2987,13 +3001,13 @@ EndFunc   ;==>_VK_pagesget
 Func _VK_pagessave()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/pages.save.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("pages.save.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pagessave
 
 
@@ -3012,13 +3026,13 @@ EndFunc   ;==>_VK_pagessave
 Func _VK_pagessaveAccess()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/pages.saveAccess.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("pages.saveAccess.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pagessaveAccess
 
 
@@ -3037,13 +3051,13 @@ EndFunc   ;==>_VK_pagessaveAccess
 Func _VK_pagesgetHistory()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/pages.getHistory.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("pages.getHistory.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pagesgetHistory
 
 
@@ -3062,13 +3076,13 @@ EndFunc   ;==>_VK_pagesgetHistory
 Func _VK_pagesgetTitles()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/pages.getTitles.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("pages.getTitles.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pagesgetTitles
 
 
@@ -3087,13 +3101,13 @@ EndFunc   ;==>_VK_pagesgetTitles
 Func _VK_pagesgetVersion()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/pages.getVersion.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("pages.getVersion.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pagesgetVersion
 
 
@@ -3112,13 +3126,13 @@ EndFunc   ;==>_VK_pagesgetVersion
 Func _VK_pagesparseWiki()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/pages.parseWiki.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("pages.parseWiki.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pagesparseWiki
 
 
@@ -3137,13 +3151,13 @@ EndFunc   ;==>_VK_pagesparseWiki
 Func _VK_pagesclearCache()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/pages.clearCache.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("pages.clearCache.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pagesclearCache
 
 #endregion Pages Functions
@@ -3164,13 +3178,13 @@ EndFunc   ;==>_VK_pagesclearCache
 Func _VK_groupsisMember()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.isMember.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.isMember.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsisMember
 
 
@@ -3189,13 +3203,13 @@ EndFunc   ;==>_VK_groupsisMember
 Func _VK_groupsgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.getById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.getById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsgetById
 
 
@@ -3214,13 +3228,13 @@ EndFunc   ;==>_VK_groupsgetById
 Func _VK_groupsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsget
 
 
@@ -3239,13 +3253,13 @@ EndFunc   ;==>_VK_groupsget
 Func _VK_groupsgetMembers()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.getMembers.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.getMembers.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsgetMembers
 
 
@@ -3264,13 +3278,13 @@ EndFunc   ;==>_VK_groupsgetMembers
 Func _VK_groupsjoin()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.join.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.join.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsjoin
 
 
@@ -3289,13 +3303,13 @@ EndFunc   ;==>_VK_groupsjoin
 Func _VK_groupsleave()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.leave.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.leave.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsleave
 
 
@@ -3314,13 +3328,13 @@ EndFunc   ;==>_VK_groupsleave
 Func _VK_groupssearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupssearch
 
 
@@ -3339,13 +3353,13 @@ EndFunc   ;==>_VK_groupssearch
 Func _VK_groupsgetInvites()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.getInvites.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.getInvites.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsgetInvites
 
 
@@ -3364,13 +3378,13 @@ EndFunc   ;==>_VK_groupsgetInvites
 Func _VK_groupsgetInvitedUsers()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.getInvitedUsers.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.getInvitedUsers.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsgetInvitedUsers
 
 
@@ -3389,13 +3403,13 @@ EndFunc   ;==>_VK_groupsgetInvitedUsers
 Func _VK_groupsbanUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.banUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.banUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsbanUser
 
 
@@ -3414,13 +3428,13 @@ EndFunc   ;==>_VK_groupsbanUser
 Func _VK_groupsunbanUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.unbanUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.unbanUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsunbanUser
 
 
@@ -3439,13 +3453,13 @@ EndFunc   ;==>_VK_groupsunbanUser
 Func _VK_groupsgetBanned()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.getBanned.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.getBanned.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsgetBanned
 
 
@@ -3464,13 +3478,13 @@ EndFunc   ;==>_VK_groupsgetBanned
 Func _VK_groupscreate()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.create.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.create.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupscreate
 
 
@@ -3489,13 +3503,13 @@ EndFunc   ;==>_VK_groupscreate
 Func _VK_groupsedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.edit.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.edit.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsedit
 
 
@@ -3514,13 +3528,13 @@ EndFunc   ;==>_VK_groupsedit
 Func _VK_groupseditPlace()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.editPlace.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.editPlace.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupseditPlace
 
 
@@ -3539,13 +3553,13 @@ EndFunc   ;==>_VK_groupseditPlace
 Func _VK_groupsgetSettings()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.getSettings.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.getSettings.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsgetSettings
 
 
@@ -3564,13 +3578,13 @@ EndFunc   ;==>_VK_groupsgetSettings
 Func _VK_groupsgetRequests()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.getRequests.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.getRequests.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsgetRequests
 
 
@@ -3589,13 +3603,13 @@ EndFunc   ;==>_VK_groupsgetRequests
 Func _VK_groupseditManager()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.editManager.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.editManager.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupseditManager
 
 
@@ -3614,13 +3628,13 @@ EndFunc   ;==>_VK_groupseditManager
 Func _VK_groupsinvite()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.invite.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.invite.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsinvite
 
 
@@ -3639,13 +3653,13 @@ EndFunc   ;==>_VK_groupsinvite
 Func _VK_groupsaddLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.addLink.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.addLink.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsaddLink
 
 
@@ -3664,13 +3678,13 @@ EndFunc   ;==>_VK_groupsaddLink
 Func _VK_groupsdeleteLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.deleteLink.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.deleteLink.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsdeleteLink
 
 
@@ -3689,13 +3703,13 @@ EndFunc   ;==>_VK_groupsdeleteLink
 Func _VK_groupseditLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.editLink.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.editLink.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupseditLink
 
 
@@ -3714,13 +3728,13 @@ EndFunc   ;==>_VK_groupseditLink
 Func _VK_groupsreorderLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.reorderLink.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.reorderLink.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsreorderLink
 
 
@@ -3739,13 +3753,13 @@ EndFunc   ;==>_VK_groupsreorderLink
 Func _VK_groupsremoveUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.removeUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.removeUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsremoveUser
 
 
@@ -3764,13 +3778,13 @@ EndFunc   ;==>_VK_groupsremoveUser
 Func _VK_groupsapproveRequest()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/groups.approveRequest.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("groups.approveRequest.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_groupsapproveRequest
 
 #endregion Groups Functions
@@ -3791,13 +3805,13 @@ EndFunc   ;==>_VK_groupsapproveRequest
 Func _VK_boardgetTopics()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.getTopics.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.getTopics.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardgetTopics
 
 
@@ -3816,13 +3830,13 @@ EndFunc   ;==>_VK_boardgetTopics
 Func _VK_boardgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.getComments.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.getComments.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardgetComments
 
 
@@ -3841,13 +3855,13 @@ EndFunc   ;==>_VK_boardgetComments
 Func _VK_boardaddTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.addTopic.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.addTopic.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardaddTopic
 
 
@@ -3866,13 +3880,13 @@ EndFunc   ;==>_VK_boardaddTopic
 Func _VK_boardaddComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.addComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.addComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardaddComment
 
 
@@ -3891,13 +3905,13 @@ EndFunc   ;==>_VK_boardaddComment
 Func _VK_boarddeleteTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.deleteTopic.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.deleteTopic.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boarddeleteTopic
 
 
@@ -3916,13 +3930,13 @@ EndFunc   ;==>_VK_boarddeleteTopic
 Func _VK_boardeditTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.editTopic.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.editTopic.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardeditTopic
 
 
@@ -3941,13 +3955,13 @@ EndFunc   ;==>_VK_boardeditTopic
 Func _VK_boardeditComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.editComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.editComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardeditComment
 
 
@@ -3966,13 +3980,13 @@ EndFunc   ;==>_VK_boardeditComment
 Func _VK_boardrestoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.restoreComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.restoreComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardrestoreComment
 
 
@@ -3991,13 +4005,13 @@ EndFunc   ;==>_VK_boardrestoreComment
 Func _VK_boarddeleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.deleteComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.deleteComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boarddeleteComment
 
 
@@ -4016,13 +4030,13 @@ EndFunc   ;==>_VK_boarddeleteComment
 Func _VK_boardopenTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.openTopic.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.openTopic.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardopenTopic
 
 
@@ -4041,13 +4055,13 @@ EndFunc   ;==>_VK_boardopenTopic
 Func _VK_boardcloseTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.closeTopic.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.closeTopic.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardcloseTopic
 
 
@@ -4066,13 +4080,13 @@ EndFunc   ;==>_VK_boardcloseTopic
 Func _VK_boardfixTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.fixTopic.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.fixTopic.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardfixTopic
 
 
@@ -4091,13 +4105,13 @@ EndFunc   ;==>_VK_boardfixTopic
 Func _VK_boardunfixTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/board.unfixTopic.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("board.unfixTopic.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_boardunfixTopic
 
 #endregion Board Functions
@@ -4118,13 +4132,13 @@ EndFunc   ;==>_VK_boardunfixTopic
 Func _VK_videoget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoget
 
 
@@ -4143,13 +4157,13 @@ EndFunc   ;==>_VK_videoget
 Func _VK_videoedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.edit.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.edit.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoedit
 
 
@@ -4168,13 +4182,13 @@ EndFunc   ;==>_VK_videoedit
 Func _VK_videoadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.add.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.add.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoadd
 
 
@@ -4193,13 +4207,13 @@ EndFunc   ;==>_VK_videoadd
 Func _VK_videosave()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.save.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.save.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videosave
 
 
@@ -4218,13 +4232,13 @@ EndFunc   ;==>_VK_videosave
 Func _VK_videodelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.delete.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.delete.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videodelete
 
 
@@ -4243,13 +4257,13 @@ EndFunc   ;==>_VK_videodelete
 Func _VK_videorestore()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.restore.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.restore.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videorestore
 
 
@@ -4268,13 +4282,13 @@ EndFunc   ;==>_VK_videorestore
 Func _VK_videosearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videosearch
 
 
@@ -4293,13 +4307,13 @@ EndFunc   ;==>_VK_videosearch
 Func _VK_videogetUserVideos()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.getUserVideos.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.getUserVideos.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videogetUserVideos
 
 
@@ -4318,13 +4332,13 @@ EndFunc   ;==>_VK_videogetUserVideos
 Func _VK_videogetAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.getAlbums.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.getAlbums.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videogetAlbums
 
 
@@ -4343,13 +4357,13 @@ EndFunc   ;==>_VK_videogetAlbums
 Func _VK_videogetAlbumById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.getAlbumById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.getAlbumById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videogetAlbumById
 
 
@@ -4368,13 +4382,13 @@ EndFunc   ;==>_VK_videogetAlbumById
 Func _VK_videoaddAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.addAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.addAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoaddAlbum
 
 
@@ -4393,13 +4407,13 @@ EndFunc   ;==>_VK_videoaddAlbum
 Func _VK_videoeditAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.editAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.editAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoeditAlbum
 
 
@@ -4418,13 +4432,13 @@ EndFunc   ;==>_VK_videoeditAlbum
 Func _VK_videodeleteAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.deleteAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.deleteAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videodeleteAlbum
 
 
@@ -4443,13 +4457,13 @@ EndFunc   ;==>_VK_videodeleteAlbum
 Func _VK_videoreorderAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.reorderAlbums.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.reorderAlbums.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoreorderAlbums
 
 
@@ -4468,13 +4482,13 @@ EndFunc   ;==>_VK_videoreorderAlbums
 Func _VK_videoaddToAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.addToAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.addToAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoaddToAlbum
 
 
@@ -4493,13 +4507,13 @@ EndFunc   ;==>_VK_videoaddToAlbum
 Func _VK_videoremoveFromAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.removeFromAlbum.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.removeFromAlbum.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoremoveFromAlbum
 
 
@@ -4518,13 +4532,13 @@ EndFunc   ;==>_VK_videoremoveFromAlbum
 Func _VK_videogetAlbumsByVideo()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.getAlbumsByVideo.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.getAlbumsByVideo.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videogetAlbumsByVideo
 
 
@@ -4543,13 +4557,13 @@ EndFunc   ;==>_VK_videogetAlbumsByVideo
 Func _VK_videogetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.getComments.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.getComments.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videogetComments
 
 
@@ -4568,13 +4582,13 @@ EndFunc   ;==>_VK_videogetComments
 Func _VK_videocreateComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.createComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.createComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videocreateComment
 
 
@@ -4593,13 +4607,13 @@ EndFunc   ;==>_VK_videocreateComment
 Func _VK_videodeleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.deleteComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.deleteComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videodeleteComment
 
 
@@ -4618,13 +4632,13 @@ EndFunc   ;==>_VK_videodeleteComment
 Func _VK_videorestoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.restoreComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.restoreComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videorestoreComment
 
 
@@ -4643,13 +4657,13 @@ EndFunc   ;==>_VK_videorestoreComment
 Func _VK_videoeditComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.editComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.editComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoeditComment
 
 
@@ -4668,13 +4682,13 @@ EndFunc   ;==>_VK_videoeditComment
 Func _VK_videogetTags()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.getTags.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.getTags.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videogetTags
 
 
@@ -4693,13 +4707,13 @@ EndFunc   ;==>_VK_videogetTags
 Func _VK_videoputTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.putTag.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.putTag.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoputTag
 
 
@@ -4718,13 +4732,13 @@ EndFunc   ;==>_VK_videoputTag
 Func _VK_videoremoveTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.removeTag.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.removeTag.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoremoveTag
 
 
@@ -4743,13 +4757,13 @@ EndFunc   ;==>_VK_videoremoveTag
 Func _VK_videogetNewTags()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.getNewTags.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.getNewTags.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videogetNewTags
 
 
@@ -4768,13 +4782,13 @@ EndFunc   ;==>_VK_videogetNewTags
 Func _VK_videoreport()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.report.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.report.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoreport
 
 
@@ -4793,13 +4807,13 @@ EndFunc   ;==>_VK_videoreport
 Func _VK_videoreportComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/video.reportComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("video.reportComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_videoreportComment
 
 #endregion Video Functions
@@ -4820,13 +4834,13 @@ EndFunc   ;==>_VK_videoreportComment
 Func _VK_notesget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notesget
 
 
@@ -4845,13 +4859,13 @@ EndFunc   ;==>_VK_notesget
 Func _VK_notesgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.getById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.getById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notesgetById
 
 
@@ -4870,13 +4884,13 @@ EndFunc   ;==>_VK_notesgetById
 Func _VK_notesgetFriendsNotes()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.getFriendsNotes.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.getFriendsNotes.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notesgetFriendsNotes
 
 
@@ -4895,13 +4909,13 @@ EndFunc   ;==>_VK_notesgetFriendsNotes
 Func _VK_notesadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.add.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.add.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notesadd
 
 
@@ -4920,13 +4934,13 @@ EndFunc   ;==>_VK_notesadd
 Func _VK_notesedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.edit.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.edit.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notesedit
 
 
@@ -4945,13 +4959,13 @@ EndFunc   ;==>_VK_notesedit
 Func _VK_notesdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.delete.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.delete.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notesdelete
 
 
@@ -4970,13 +4984,13 @@ EndFunc   ;==>_VK_notesdelete
 Func _VK_notesgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.getComments.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.getComments.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notesgetComments
 
 
@@ -4995,13 +5009,13 @@ EndFunc   ;==>_VK_notesgetComments
 Func _VK_notescreateComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.createComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.createComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notescreateComment
 
 
@@ -5020,13 +5034,13 @@ EndFunc   ;==>_VK_notescreateComment
 Func _VK_noteseditComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.editComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.editComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_noteseditComment
 
 
@@ -5045,13 +5059,13 @@ EndFunc   ;==>_VK_noteseditComment
 Func _VK_notesdeleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.deleteComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.deleteComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notesdeleteComment
 
 
@@ -5070,13 +5084,13 @@ EndFunc   ;==>_VK_notesdeleteComment
 Func _VK_notesrestoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notes.restoreComment.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notes.restoreComment.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notesrestoreComment
 
 #endregion Notes Functions
@@ -5097,13 +5111,13 @@ EndFunc   ;==>_VK_notesrestoreComment
 Func _VK_placesadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/places.add.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("places.add.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_placesadd
 
 
@@ -5122,13 +5136,13 @@ EndFunc   ;==>_VK_placesadd
 Func _VK_placesgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/places.getById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("places.getById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_placesgetById
 
 
@@ -5147,13 +5161,13 @@ EndFunc   ;==>_VK_placesgetById
 Func _VK_placessearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/places.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("places.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_placessearch
 
 
@@ -5172,13 +5186,13 @@ EndFunc   ;==>_VK_placessearch
 Func _VK_placescheckin()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/places.checkin.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("places.checkin.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_placescheckin
 
 
@@ -5197,13 +5211,13 @@ EndFunc   ;==>_VK_placescheckin
 Func _VK_placesgetCheckins()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/places.getCheckins.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("places.getCheckins.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_placesgetCheckins
 
 
@@ -5222,13 +5236,13 @@ EndFunc   ;==>_VK_placesgetCheckins
 Func _VK_placesgetTypes()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/places.getTypes.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("places.getTypes.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_placesgetTypes
 
 #endregion Places Functions
@@ -5249,13 +5263,13 @@ EndFunc   ;==>_VK_placesgetTypes
 Func _VK_accountgetCounters()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.getCounters.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.getCounters.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountgetCounters
 
 
@@ -5274,13 +5288,13 @@ EndFunc   ;==>_VK_accountgetCounters
 Func _VK_accountsetNameInMenu()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.setNameInMenu.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.setNameInMenu.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountsetNameInMenu
 
 
@@ -5299,13 +5313,13 @@ EndFunc   ;==>_VK_accountsetNameInMenu
 Func _VK_accountsetOnline()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.setOnline.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.setOnline.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountsetOnline
 
 
@@ -5324,13 +5338,13 @@ EndFunc   ;==>_VK_accountsetOnline
 Func _VK_accountsetOffline()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.setOffline.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.setOffline.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountsetOffline
 
 
@@ -5349,13 +5363,13 @@ EndFunc   ;==>_VK_accountsetOffline
 Func _VK_accountlookupContacts()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.lookupContacts.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.lookupContacts.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountlookupContacts
 
 
@@ -5374,13 +5388,13 @@ EndFunc   ;==>_VK_accountlookupContacts
 Func _VK_accountregisterDevice()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.registerDevice.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.registerDevice.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountregisterDevice
 
 
@@ -5399,13 +5413,13 @@ EndFunc   ;==>_VK_accountregisterDevice
 Func _VK_accountunregisterDevice()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.unregisterDevice.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.unregisterDevice.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountunregisterDevice
 
 
@@ -5424,13 +5438,13 @@ EndFunc   ;==>_VK_accountunregisterDevice
 Func _VK_accountsetSilenceMode()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.setSilenceMode.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.setSilenceMode.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountsetSilenceMode
 
 
@@ -5449,13 +5463,13 @@ EndFunc   ;==>_VK_accountsetSilenceMode
 Func _VK_accountgetPushSettings()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.getPushSettings.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.getPushSettings.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountgetPushSettings
 
 
@@ -5474,13 +5488,13 @@ EndFunc   ;==>_VK_accountgetPushSettings
 Func _VK_accountsetPushSettings()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.setPushSettings.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.setPushSettings.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountsetPushSettings
 
 
@@ -5499,13 +5513,13 @@ EndFunc   ;==>_VK_accountsetPushSettings
 Func _VK_accountgetAppPermissions()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.getAppPermissions.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.getAppPermissions.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountgetAppPermissions
 
 
@@ -5524,13 +5538,13 @@ EndFunc   ;==>_VK_accountgetAppPermissions
 Func _VK_accountgetActiveOffers()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.getActiveOffers.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.getActiveOffers.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountgetActiveOffers
 
 
@@ -5549,13 +5563,13 @@ EndFunc   ;==>_VK_accountgetActiveOffers
 Func _VK_accountbanUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.banUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.banUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountbanUser
 
 
@@ -5574,13 +5588,13 @@ EndFunc   ;==>_VK_accountbanUser
 Func _VK_accountunbanUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.unbanUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.unbanUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountunbanUser
 
 
@@ -5599,13 +5613,13 @@ EndFunc   ;==>_VK_accountunbanUser
 Func _VK_accountgetBanned()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.getBanned.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.getBanned.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountgetBanned
 
 
@@ -5624,13 +5638,13 @@ EndFunc   ;==>_VK_accountgetBanned
 Func _VK_accountgetInfo()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.getInfo.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.getInfo.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountgetInfo
 
 
@@ -5649,13 +5663,13 @@ EndFunc   ;==>_VK_accountgetInfo
 Func _VK_accountsetInfo()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.setInfo.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.setInfo.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountsetInfo
 
 
@@ -5674,13 +5688,13 @@ EndFunc   ;==>_VK_accountsetInfo
 Func _VK_accountchangePassword()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.changePassword.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.changePassword.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountchangePassword
 
 
@@ -5699,13 +5713,13 @@ EndFunc   ;==>_VK_accountchangePassword
 Func _VK_accountgetProfileInfo()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.getProfileInfo.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.getProfileInfo.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountgetProfileInfo
 
 
@@ -5724,13 +5738,13 @@ EndFunc   ;==>_VK_accountgetProfileInfo
 Func _VK_accountsaveProfileInfo()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/account.saveProfileInfo.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("account.saveProfileInfo.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_accountsaveProfileInfo
 
 #endregion Account Functions
@@ -5751,13 +5765,13 @@ EndFunc   ;==>_VK_accountsaveProfileInfo
 Func _VK_messagesget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesget
 
 
@@ -5776,13 +5790,13 @@ EndFunc   ;==>_VK_messagesget
 Func _VK_messagesgetDialogs()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.getDialogs.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.getDialogs.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesgetDialogs
 
 
@@ -5801,13 +5815,13 @@ EndFunc   ;==>_VK_messagesgetDialogs
 Func _VK_messagesgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.getById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.getById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesgetById
 
 
@@ -5826,13 +5840,13 @@ EndFunc   ;==>_VK_messagesgetById
 Func _VK_messagessearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagessearch
 
 
@@ -5851,13 +5865,13 @@ EndFunc   ;==>_VK_messagessearch
 Func _VK_messagesgetHistory()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.getHistory.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.getHistory.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesgetHistory
 
 
@@ -5876,13 +5890,13 @@ EndFunc   ;==>_VK_messagesgetHistory
 Func _VK_messagessend()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.send.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.send.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagessend
 
 
@@ -5901,13 +5915,13 @@ EndFunc   ;==>_VK_messagessend
 Func _VK_messagesdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.delete.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.delete.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesdelete
 
 
@@ -5926,13 +5940,13 @@ EndFunc   ;==>_VK_messagesdelete
 Func _VK_messagesdeleteDialog()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.deleteDialog.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.deleteDialog.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesdeleteDialog
 
 
@@ -5951,13 +5965,13 @@ EndFunc   ;==>_VK_messagesdeleteDialog
 Func _VK_messagesrestore()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.restore.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.restore.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesrestore
 
 
@@ -5976,13 +5990,13 @@ EndFunc   ;==>_VK_messagesrestore
 Func _VK_messagesmarkAsRead()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.markAsRead.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.markAsRead.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesmarkAsRead
 
 
@@ -6001,13 +6015,13 @@ EndFunc   ;==>_VK_messagesmarkAsRead
 Func _VK_messagesmarkAsImportant()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.markAsImportant.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.markAsImportant.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesmarkAsImportant
 
 
@@ -6026,13 +6040,13 @@ EndFunc   ;==>_VK_messagesmarkAsImportant
 Func _VK_messagesgetLongPollServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.getLongPollServer.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.getLongPollServer.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesgetLongPollServer
 
 
@@ -6051,13 +6065,13 @@ EndFunc   ;==>_VK_messagesgetLongPollServer
 Func _VK_messagesgetLongPollHistory()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.getLongPollHistory.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.getLongPollHistory.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesgetLongPollHistory
 
 
@@ -6076,13 +6090,13 @@ EndFunc   ;==>_VK_messagesgetLongPollHistory
 Func _VK_messagesgetChat()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.getChat.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.getChat.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesgetChat
 
 
@@ -6101,13 +6115,13 @@ EndFunc   ;==>_VK_messagesgetChat
 Func _VK_messagescreateChat()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.createChat.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.createChat.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagescreateChat
 
 
@@ -6126,13 +6140,13 @@ EndFunc   ;==>_VK_messagescreateChat
 Func _VK_messageseditChat()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.editChat.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.editChat.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messageseditChat
 
 
@@ -6151,13 +6165,13 @@ EndFunc   ;==>_VK_messageseditChat
 Func _VK_messagesgetChatUsers()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.getChatUsers.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.getChatUsers.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesgetChatUsers
 
 
@@ -6176,13 +6190,13 @@ EndFunc   ;==>_VK_messagesgetChatUsers
 Func _VK_messagessetActivity()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.setActivity.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.setActivity.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagessetActivity
 
 
@@ -6201,13 +6215,13 @@ EndFunc   ;==>_VK_messagessetActivity
 Func _VK_messagessearchDialogs()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.searchDialogs.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.searchDialogs.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagessearchDialogs
 
 
@@ -6226,13 +6240,13 @@ EndFunc   ;==>_VK_messagessearchDialogs
 Func _VK_messagesaddChatUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.addChatUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.addChatUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesaddChatUser
 
 
@@ -6251,13 +6265,13 @@ EndFunc   ;==>_VK_messagesaddChatUser
 Func _VK_messagesremoveChatUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.removeChatUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.removeChatUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesremoveChatUser
 
 
@@ -6276,13 +6290,13 @@ EndFunc   ;==>_VK_messagesremoveChatUser
 Func _VK_messagesgetLastActivity()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.getLastActivity.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.getLastActivity.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesgetLastActivity
 
 
@@ -6301,13 +6315,13 @@ EndFunc   ;==>_VK_messagesgetLastActivity
 Func _VK_messagessetChatPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.setChatPhoto.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.setChatPhoto.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagessetChatPhoto
 
 
@@ -6326,13 +6340,13 @@ EndFunc   ;==>_VK_messagessetChatPhoto
 Func _VK_messagesdeleteChatPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/messages.deleteChatPhoto.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("messages.deleteChatPhoto.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_messagesdeleteChatPhoto
 
 #endregion Messages Functions
@@ -6353,13 +6367,13 @@ EndFunc   ;==>_VK_messagesdeleteChatPhoto
 Func _VK_newsfeedget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedget
 
 
@@ -6378,13 +6392,13 @@ EndFunc   ;==>_VK_newsfeedget
 Func _VK_newsfeedgetRecommended()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.getRecommended.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.getRecommended.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedgetRecommended
 
 
@@ -6403,13 +6417,13 @@ EndFunc   ;==>_VK_newsfeedgetRecommended
 Func _VK_newsfeedgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.getComments.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.getComments.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedgetComments
 
 
@@ -6428,13 +6442,13 @@ EndFunc   ;==>_VK_newsfeedgetComments
 Func _VK_newsfeedgetMentions()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.getMentions.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.getMentions.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedgetMentions
 
 
@@ -6453,13 +6467,13 @@ EndFunc   ;==>_VK_newsfeedgetMentions
 Func _VK_newsfeedgetBanned()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.getBanned.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.getBanned.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedgetBanned
 
 
@@ -6478,13 +6492,13 @@ EndFunc   ;==>_VK_newsfeedgetBanned
 Func _VK_newsfeedaddBan()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.addBan.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.addBan.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedaddBan
 
 
@@ -6503,13 +6517,13 @@ EndFunc   ;==>_VK_newsfeedaddBan
 Func _VK_newsfeeddeleteBan()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.deleteBan.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.deleteBan.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeeddeleteBan
 
 
@@ -6528,13 +6542,13 @@ EndFunc   ;==>_VK_newsfeeddeleteBan
 Func _VK_newsfeedignoreItem()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.ignoreItem.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.ignoreItem.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedignoreItem
 
 
@@ -6553,13 +6567,13 @@ EndFunc   ;==>_VK_newsfeedignoreItem
 Func _VK_newsfeedunignoreItem()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.unignoreItem.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.unignoreItem.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedunignoreItem
 
 
@@ -6578,13 +6592,13 @@ EndFunc   ;==>_VK_newsfeedunignoreItem
 Func _VK_newsfeedsearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.search.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.search.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedsearch
 
 
@@ -6603,13 +6617,13 @@ EndFunc   ;==>_VK_newsfeedsearch
 Func _VK_newsfeedgetLists()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.getLists.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.getLists.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedgetLists
 
 
@@ -6628,13 +6642,13 @@ EndFunc   ;==>_VK_newsfeedgetLists
 Func _VK_newsfeedsaveList()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.saveList.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.saveList.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedsaveList
 
 
@@ -6653,13 +6667,13 @@ EndFunc   ;==>_VK_newsfeedsaveList
 Func _VK_newsfeeddeleteList()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.deleteList.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.deleteList.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeeddeleteList
 
 
@@ -6678,13 +6692,13 @@ EndFunc   ;==>_VK_newsfeeddeleteList
 Func _VK_newsfeedunsubscribe()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.unsubscribe.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.unsubscribe.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedunsubscribe
 
 
@@ -6703,13 +6717,13 @@ EndFunc   ;==>_VK_newsfeedunsubscribe
 Func _VK_newsfeedgetSuggestedSources()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/newsfeed.getSuggestedSources.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("newsfeed.getSuggestedSources.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_newsfeedgetSuggestedSources
 
 #endregion News Functions
@@ -6730,13 +6744,13 @@ EndFunc   ;==>_VK_newsfeedgetSuggestedSources
 Func _VK_likesgetList()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/likes.getList.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("likes.getList.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_likesgetList
 
 
@@ -6755,13 +6769,13 @@ EndFunc   ;==>_VK_likesgetList
 Func _VK_likesadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/likes.add.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("likes.add.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_likesadd
 
 
@@ -6780,13 +6794,13 @@ EndFunc   ;==>_VK_likesadd
 Func _VK_likesdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/likes.delete.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("likes.delete.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_likesdelete
 
 
@@ -6805,13 +6819,13 @@ EndFunc   ;==>_VK_likesdelete
 Func _VK_likesisLiked()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/likes.isLiked.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("likes.isLiked.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_likesisLiked
 
 #endregion Likes Functions
@@ -6832,13 +6846,13 @@ EndFunc   ;==>_VK_likesisLiked
 Func _VK_pollsgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/polls.getById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("polls.getById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pollsgetById
 
 
@@ -6857,13 +6871,13 @@ EndFunc   ;==>_VK_pollsgetById
 Func _VK_pollsaddVote()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/polls.addVote.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("polls.addVote.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pollsaddVote
 
 
@@ -6882,13 +6896,13 @@ EndFunc   ;==>_VK_pollsaddVote
 Func _VK_pollsdeleteVote()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/polls.deleteVote.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("polls.deleteVote.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pollsdeleteVote
 
 
@@ -6907,13 +6921,13 @@ EndFunc   ;==>_VK_pollsdeleteVote
 Func _VK_pollsgetVoters()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/polls.getVoters.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("polls.getVoters.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pollsgetVoters
 
 
@@ -6932,13 +6946,13 @@ EndFunc   ;==>_VK_pollsgetVoters
 Func _VK_pollscreate()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/polls.create.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("polls.create.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pollscreate
 
 
@@ -6957,13 +6971,13 @@ EndFunc   ;==>_VK_pollscreate
 Func _VK_pollsedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/polls.edit.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("polls.edit.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_pollsedit
 
 #endregion Polls Functions
@@ -6984,13 +6998,13 @@ EndFunc   ;==>_VK_pollsedit
 Func _VK_docsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/docs.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("docs.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_docsget
 
 
@@ -7009,13 +7023,13 @@ EndFunc   ;==>_VK_docsget
 Func _VK_docsgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/docs.getById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("docs.getById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_docsgetById
 
 
@@ -7034,13 +7048,13 @@ EndFunc   ;==>_VK_docsgetById
 Func _VK_docsgetUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/docs.getUploadServer.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("docs.getUploadServer.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_docsgetUploadServer
 
 
@@ -7059,13 +7073,13 @@ EndFunc   ;==>_VK_docsgetUploadServer
 Func _VK_docsgetWallUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/docs.getWallUploadServer.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("docs.getWallUploadServer.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_docsgetWallUploadServer
 
 
@@ -7084,13 +7098,13 @@ EndFunc   ;==>_VK_docsgetWallUploadServer
 Func _VK_docssave()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/docs.save.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("docs.save.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_docssave
 
 
@@ -7109,13 +7123,13 @@ EndFunc   ;==>_VK_docssave
 Func _VK_docsdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/docs.delete.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("docs.delete.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_docsdelete
 
 
@@ -7134,13 +7148,13 @@ EndFunc   ;==>_VK_docsdelete
 Func _VK_docsadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/docs.add.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("docs.add.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_docsadd
 
 #endregion Docs Functions
@@ -7161,13 +7175,13 @@ EndFunc   ;==>_VK_docsadd
 Func _VK_favegetUsers()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.getUsers.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.getUsers.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_favegetUsers
 
 
@@ -7186,13 +7200,13 @@ EndFunc   ;==>_VK_favegetUsers
 Func _VK_favegetPhotos()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.getPhotos.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.getPhotos.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_favegetPhotos
 
 
@@ -7211,13 +7225,13 @@ EndFunc   ;==>_VK_favegetPhotos
 Func _VK_favegetPosts()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.getPosts.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.getPosts.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_favegetPosts
 
 
@@ -7236,13 +7250,13 @@ EndFunc   ;==>_VK_favegetPosts
 Func _VK_favegetVideos()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.getVideos.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.getVideos.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_favegetVideos
 
 
@@ -7261,13 +7275,13 @@ EndFunc   ;==>_VK_favegetVideos
 Func _VK_favegetLinks()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.getLinks.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.getLinks.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_favegetLinks
 
 
@@ -7286,13 +7300,13 @@ EndFunc   ;==>_VK_favegetLinks
 Func _VK_faveaddUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.addUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.addUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_faveaddUser
 
 
@@ -7311,13 +7325,13 @@ EndFunc   ;==>_VK_faveaddUser
 Func _VK_faveremoveUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.removeUser.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.removeUser.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_faveremoveUser
 
 
@@ -7336,13 +7350,13 @@ EndFunc   ;==>_VK_faveremoveUser
 Func _VK_faveaddGroup()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.addGroup.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.addGroup.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_faveaddGroup
 
 
@@ -7361,13 +7375,13 @@ EndFunc   ;==>_VK_faveaddGroup
 Func _VK_faveremoveGroup()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.removeGroup.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.removeGroup.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_faveremoveGroup
 
 
@@ -7386,13 +7400,13 @@ EndFunc   ;==>_VK_faveremoveGroup
 Func _VK_faveaddLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.addLink.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.addLink.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_faveaddLink
 
 
@@ -7411,13 +7425,13 @@ EndFunc   ;==>_VK_faveaddLink
 Func _VK_faveremoveLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/fave.removeLink.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("fave.removeLink.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_faveremoveLink
 
 #endregion Favourites Functions
@@ -7438,13 +7452,13 @@ EndFunc   ;==>_VK_faveremoveLink
 Func _VK_notificationsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notifications.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notifications.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notificationsget
 
 
@@ -7463,13 +7477,13 @@ EndFunc   ;==>_VK_notificationsget
 Func _VK_notificationsmarkAsViewed()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/notifications.markAsViewed.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("notifications.markAsViewed.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_notificationsmarkAsViewed
 
 #endregion Notifications Functions
@@ -7490,13 +7504,13 @@ EndFunc   ;==>_VK_notificationsmarkAsViewed
 Func _VK_statsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/stats.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("stats.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_statsget
 
 
@@ -7515,13 +7529,13 @@ EndFunc   ;==>_VK_statsget
 Func _VK_statstrackVisitor()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/stats.trackVisitor.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("stats.trackVisitor.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_statstrackVisitor
 
 
@@ -7540,13 +7554,13 @@ EndFunc   ;==>_VK_statstrackVisitor
 Func _VK_statsgetPostReach()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/stats.getPostReach.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("stats.getPostReach.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_statsgetPostReach
 
 #endregion Stats Functions
@@ -7567,13 +7581,13 @@ EndFunc   ;==>_VK_statsgetPostReach
 Func _VK_appsgetCatalog()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/apps.getCatalog.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("apps.getCatalog.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_appsgetCatalog
 
 
@@ -7592,13 +7606,13 @@ EndFunc   ;==>_VK_appsgetCatalog
 Func _VK_appsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/apps.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("apps.get.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_appsget
 
 
@@ -7617,13 +7631,13 @@ EndFunc   ;==>_VK_appsget
 Func _VK_appssendRequest()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/apps.sendRequest.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("apps.sendRequest.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_appssendRequest
 
 
@@ -7642,13 +7656,13 @@ EndFunc   ;==>_VK_appssendRequest
 Func _VK_appsdeleteAppRequests()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/apps.deleteAppRequests.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("apps.deleteAppRequests.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_appsdeleteAppRequests
 
 
@@ -7667,13 +7681,13 @@ EndFunc   ;==>_VK_appsdeleteAppRequests
 Func _VK_appsgetFriendsList()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/apps.getFriendsList.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("apps.getFriendsList.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_appsgetFriendsList
 
 #endregion Apps Functions
@@ -7694,13 +7708,13 @@ EndFunc   ;==>_VK_appsgetFriendsList
 Func _VK_utilscheckLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/utils.checkLink.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("utils.checkLink.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_utilscheckLink
 
 
@@ -7718,13 +7732,13 @@ EndFunc   ;==>_VK_utilscheckLink
 Func _VK_utilsresolveScreenName()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/utils.resolveScreenName.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("utils.resolveScreenName.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_utilsresolveScreenName
 
 
@@ -7743,13 +7757,13 @@ EndFunc   ;==>_VK_utilsresolveScreenName
 Func _VK_utilsgetServerTime()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/utils.getServerTime.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("utils.getServerTime.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_utilsgetServerTime
 
 #endregion Utilites Functions
@@ -7770,13 +7784,13 @@ EndFunc   ;==>_VK_utilsgetServerTime
 Func _VK_databasegetCountries()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getCountries.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getCountries.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetCountries
 
 
@@ -7795,13 +7809,13 @@ EndFunc   ;==>_VK_databasegetCountries
 Func _VK_databasegetRegions()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getRegions.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getRegions.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetRegions
 
 
@@ -7820,13 +7834,13 @@ EndFunc   ;==>_VK_databasegetRegions
 Func _VK_databasegetStreetsById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getStreetsById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getStreetsById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetStreetsById
 
 
@@ -7845,13 +7859,13 @@ EndFunc   ;==>_VK_databasegetStreetsById
 Func _VK_databasegetCountriesById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getCountriesById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getCountriesById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetCountriesById
 
 
@@ -7870,13 +7884,13 @@ EndFunc   ;==>_VK_databasegetCountriesById
 Func _VK_databasegetCities()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getCities.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getCities.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetCities
 
 
@@ -7895,13 +7909,13 @@ EndFunc   ;==>_VK_databasegetCities
 Func _VK_databasegetCitiesById()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getCitiesById.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getCitiesById.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetCitiesById
 
 
@@ -7920,13 +7934,13 @@ EndFunc   ;==>_VK_databasegetCitiesById
 Func _VK_databasegetUniversities()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getUniversities.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getUniversities.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetUniversities
 
 
@@ -7945,13 +7959,13 @@ EndFunc   ;==>_VK_databasegetUniversities
 Func _VK_databasegetSchools()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getSchools.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getSchools.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetSchools
 
 
@@ -7970,13 +7984,13 @@ EndFunc   ;==>_VK_databasegetSchools
 Func _VK_databasegetSchoolClasses()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getSchoolClasses.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getSchoolClasses.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetSchoolClasses
 
 
@@ -7995,13 +8009,13 @@ EndFunc   ;==>_VK_databasegetSchoolClasses
 Func _VK_databasegetFaculties()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getFaculties.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getFaculties.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetFaculties
 
 
@@ -8020,13 +8034,13 @@ EndFunc   ;==>_VK_databasegetFaculties
 Func _VK_databasegetChairs()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/database.getChairs.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("database.getChairs.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_databasegetChairs
 
 #endregion Database Functions
@@ -8046,13 +8060,13 @@ EndFunc   ;==>_VK_databasegetChairs
 Func _VK_giftsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/gifts.get.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("gifts.get.xml", "")
+
+	If @error Then Return SetError(1, 0, $sResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_giftsget
 
 ; #FUNCTION# =================================================================================================
@@ -8069,13 +8083,13 @@ EndFunc   ;==>_VK_giftsget
 Func _VK_searchgetHints()
 	Local $sResponse, $asReturn
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/search.getHints.xml?access_token=" & $_sAccessToken), 4)
-	If _VK_CheckForError($sResponse) Then
-		Return SetError(1, 0, _VK_CheckForError($sResponse))
-	Else
-		$asReturn = _CreateArray($sResponse, "uid")
-		Return $asReturn
-	EndIf
+	$sResponse = _VK_SendRequest("search.getHints.xml", "")
+
+	If @error Then Return SetError(@error, 0, $aResponse)
+
+	$asReturn = _VK_CreateArray($sResponse, "uid")
+	Return $asReturn
+
 EndFunc   ;==>_VK_searchgetHints
 
 
@@ -8158,32 +8172,9 @@ Func __responseParse($_sResponse)
 EndFunc   ;==>__responseParse
 
 ; #FUNCTION# =================================================================================================
-; Name...........: _VK_CheckForError()
-; Description ...: Проверка на то, вернул ли нам сайт ошибку
-; Syntax.........: _VK_CheckForError($sResponse)
-; Parameters ....: $sResponse - неформатированный ответ сервера
-; Return values .: Успех - Строка с описанием ошибки
-;                  Неудача - 0
-; Author ........: Medic84
-; Remarks .......: Отсутствуют
-; ============================================================================================================
-Func _VK_CheckForError($sResponse)
-	Local $error_Code, $error_Msg
-
-	$error_Code = _CreateArray($sResponse, "error_code")
-	$error_Msg = _CreateArray($sResponse, "error_msg")
-
-	If IsArray($error_Code) Then
-		Return "Error: " & $error_Code[0] & " - " & $error_Msg[0]
-	Else
-		Return 0
-	EndIf
-EndFunc   ;==>_VK_CheckForError
-
-; #FUNCTION# =================================================================================================
-; Name...........: _CreateArray()
+; Name...........: _VK_CreateArray()
 ; Description ...: Создает массив из ответной строки по кодовому слову
-; Syntax.........: _CreateArray($sString, $sCodeWord)
+; Syntax.........: _VK_CreateArray($sString, $sCodeWord)
 ; Parameters ....: $sString - Ответная стока - та которую выдал ВКонтакте
 ;                  $sCodeWord - слово для поиска - которое заключено в галки
 ; Return values .: Успех -  Массив с даными
@@ -8191,13 +8182,37 @@ EndFunc   ;==>_VK_CheckForError
 ; Author ........: Medic84
 ; Remarks .......: Отсутствуют
 ; ============================================================================================================
-Func _CreateArray($sString, $sCodeWord)
+Func _VK_CreateArray($sString, $sCodeWord)
 	Dim $aRetArray
 
 	$aRetArray = StringRegExp($sString, "(?si)<" & $sCodeWord & ">(.*?)</" & $sCodeWord & ">", 3)
 
 	Return $aRetArray
-EndFunc   ;==>_CreateArray
+EndFunc   ;==>_VK_CreateArray
+
+; #FUNCTION# =================================================================================================
+; Name...........: _VK_SendRequest()
+; Description ...: Создает массив из ответной строки по кодовому слову
+; Syntax.........: _VK_CreateArray($sString, $sCodeWord)
+; Parameters ....: $sString - Ответная стока - та которую выдал ВКонтакте
+;                  $sCodeWord - слово для поиска - которое заключено в галки
+; Return values .: Успех -  Массив с даными
+;                  Неудача - 1
+; Author ........: Medic84
+; Remarks .......: Отсутствуют
+; ============================================================================================================
+Func _VK_SendRequest($sMethod, $sRequest)
+	Local $sResponse, $aError = 0
+
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/" & $sMethod & "?access_token=" & $_sAccessToken & "&" & $sRequest), 4)
+
+	$error_Code = _VK_CreateArray($sResponse, "error_code")
+	$error_Msg = _VK_CreateArray($sResponse, "error_msg")
+
+	If IsArray($error_Code) Then Return SetError($error_Code[0], 0, "Error: " & $error_Code[0] & " - " & $error_Msg[0])
+
+	Return $sResponse
+EndFunc   ;==>_VK_SendRequest
 
 ;===============================================================================
 ; Description:      _StringFormatTime - Get a string representation of a timestamp
