@@ -507,6 +507,7 @@ Func _VK_audioGet($_iNeed_User = 0, $_sUID = "", $_sGID = "", $_iAlbumID = "", $
 	Local $aOwnerFields[4] = ["id", "photo", "name", "name_gen"]
 
 	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.get.xml?access_token=" & $_sAccessToken & "&uid=" & $_sUID & "&gid=" & $_sGID & "&aids=" & $_sAIDs & "&need_user=" & $_iNeed_User & "&album_id=" & $_iAlbumID & "&count=" & $_iCount & "&offset=" & $_iOffset), 4)
+
 	If _VK_CheckForError($sResponse) Then
 		Return SetError(1, 0, _VK_CheckForError($sResponse))
 	Else

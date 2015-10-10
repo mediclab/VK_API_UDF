@@ -2367,9 +2367,10 @@ EndFunc   ;==>_VK_storagegetKeys
 
 #endregion Storage Functions
 
-#region Status Functions
+#region +Status Functions
 
 ; #FUNCTION# =================================================================================================
+<<<<<<< Updated upstream
 ; Name...........:  _VK_statusget()
 ; Description ...: Получает статус пользователя.
 ; Syntax.........: _VK_statusGet($_sUID = "", $_bGID = False)
@@ -2402,10 +2403,48 @@ Func _VK_statusGet($_sUID = "", $_bGID = False)
 	Return $sStatus[0]
 
 EndFunc   ;==>_VK_statusget
+=======
+; Name...........: _VK_status_get()
+; Description ...: Получает статус пользователя.
+; Syntax.........: _VK_status_get($_sUID = "", $_bGID = False)
+; Parameters ....: $_sUID - UID пользователя или GID группы у которого(й) требуется получить статус. По умолчанию - текущий пользователь
+;				   $_bGID - установить True если необходимо получить статус группы.
+; Return values .: Успех - Строка со статусом и @error = 0.
+;                  Неудача - Ошибка выданная сайтом и @error = 1
+;				   @error = 2 присваивается в случае если не было задано ID группу у которой необходимо получить статус.
+; Author ........: Fever, Medic84
+; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 1024.
+; ============================================================================================================
+Func _VK_status_get($_sUID = "", $_bGID = False)
+	Local $sStatus, $sResponse, $sWho
+
+	If Not $_bGID Then
+		$sWho = "user"
+	Else
+		If $_sUID = "" Then Return SetError(2, 0, "Group ID is empty!")
+		$sWho = "group"
+	EndIf
+
+	$sResponse =  _GetResponse("status.get", $sWho & "_id=" & $_sUID)
+
+	If @error Then
+		Return SetError(1, 0, $sResponse)
+	Else
+		$sStatus = _CreateArray($sResponse, "text")
+
+		If IsArray($sStatus) Then
+			Return $sStatus[0]
+		Else
+			Return ""
+		EndIf
+	EndIf
+EndFunc   ;==>_VK_status_get
+>>>>>>> Stashed changes
 
 
 
 ; #FUNCTION# =================================================================================================
+<<<<<<< Updated upstream
 ; Name...........:  _VK_statusSet()
 ; Description ...: Устанавливает новый статус текущему пользователю или сообществу.
 ; Syntax.........: _VK_statusSet($_sText = "")
@@ -2430,6 +2469,34 @@ Func _VK_statusSet($_sText = "", $_sGID = "")
 	Return $sStatus[0]
 
 EndFunc   ;==>_VK_statusset
+=======
+; Name...........: _VK_status_set()
+; Description ...: Устанавливает новый статус текущему пользователю.
+; Syntax.........: _VK_status_set($_sText = "", $_sGID = "")
+; Parameters ....: $_sGID - ID группы для которой необходимо сменить статусю По умолчанию - текущий пользователь
+;                  $_sText - текст статуса, который необходимо установить.  По умолчанию - очищение статуса
+; Return values .: Успех - 1 и @error = 0.
+;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Author ........: Fever, Medic84
+; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 1024.
+; ============================================================================================================
+Func _VK_status_set($_sText = "", $_sGID = "")
+	Local $sStatus, $sResponse, $sRequest
+
+	$sRequest = "text=" & _Encoding_URIEncode($_sText)
+
+	If $_sGID Then $sRequest &= "&group_id=" & $_sGID
+
+	$sResponse =  _GetResponse("status.set", $sRequest)
+
+	If @error Then
+		Return SetError(1, 0, $sResponse)
+	Else
+		$sStatus = _CreateArray($sResponse, "response")
+		Return $sStatus[0]
+	EndIf
+EndFunc   ;==>_VK_status_set
+>>>>>>> Stashed changes
 
 #endregion Status Functions
 
@@ -8214,6 +8281,33 @@ Func _VK_SendRequest($sMethod, $sRequest)
 	Return $sResponse
 EndFunc   ;==>_VK_SendRequest
 
+
+; #FUNCTION# =================================================================================================
+; Name...........: _GetResponse()
+; Description ...: Запрос к серверу и проверка на ошибку
+; Syntax.........: _GetResponse($sMethod, $sRequest)
+; Parameters ....: $sMethod - метод к которому производится запрос
+;                  $sRequest - строка запроса
+; Return values .: Успех -  строка: ответ сервера
+;                  Неудача - установка @error = 1 и текст ошибки в возвращаемом значении.
+; Author ........: Medic84
+; Remarks .......: Отсутствуют
+; ============================================================================================================
+Func _GetResponse($sMethod, $sRequest)
+	Dim $sResponse, $sError
+
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/" & $sMethod & ".xml?" & $sRequest & "&access_token=" & $_sAccessToken), 4)
+
+	$sError = _VK_CheckForError($sResponse)
+
+	If $sError Then
+		Return SetError(1, 0, $sError)
+	EndIf
+
+	Return $sResponse
+EndFunc   ;==>_GetResponse
+
+
 ;===============================================================================
 ; Description:      _StringFormatTime - Get a string representation of a timestamp
 ;					according to the format string given to the function.
@@ -8277,9 +8371,9 @@ EndFunc   ;==>_StringFormatTime
 
 ; #FUNCTION# =================================================================================================
 ; Name...........: _Encoding_URIEncode()
-; Description ...: Кодирование текстовой строки в URI-кодю
+; Description ...: Кодирование текстовой строки в URI-код.
 ; Syntax.........: _Encoding_URIEncode($sString)
-; Parameters ....: $sString - строка? которую необходимо преобразовать
+; Parameters ....: $sString - строка, которую необходимо преобразовать
 ; Return values .: Успех -  закодированный текст
 ;                  Неудача - 0
 ; Author ........: CreatoR
