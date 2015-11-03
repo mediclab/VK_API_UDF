@@ -1,4 +1,4 @@
-#include-once
+п»ї#include-once
 #include <IE.au3>
 #include <WindowsConstants.au3>
 #include <GUIConstantsEx.au3>
@@ -49,7 +49,7 @@ EndFunc   ;==>_VK_SignIn
 Func _VK_users_Get($sUser_ids, $sFields = Null, $sName_case = "nom")
 	Local $aResponse, $bNeedToken, $sQuery
 
-	$sFields = (Not $sFields)) ? "&fields=" & $sFields : $sFields
+	$sFields = (Not $sFields) ? "&fields=" & $sFields : $sFields
 	$bNeedToken = ($_sAccessToken = "") ? False : True
 	$sQuery = "user_ids=" & $sUser_ids & $sFields & "&name_case=" & $sName_case
 
@@ -251,11 +251,8 @@ Func _VK_auth_checkPhone()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_auth_checkPhone
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -276,11 +273,8 @@ Func _VK_auth_signup()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_auth_signup
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -301,11 +295,8 @@ Func _VK_auth_confirm()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_auth_confirm
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -326,11 +317,8 @@ Func _VK_auth_restore()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_auth_restore
-
 #endregion Authorize Functions
 
 
@@ -364,7 +352,6 @@ Func _VK_wall_get($i_sOwnerID, $iOffset, $iCount, $sFilter = "all", $iExtended =
 EndFunc   ;==>_VK_wall_get
 
 
-
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_search()
 ; Description ...: РњРµС‚РѕРґ, РїРѕР·РІРѕР»СЏСЋС‰РёР№ РѕСЃСѓС‰РµСЃС‚РІР»СЏС‚СЊ РїРѕРёСЃРє РїРѕ СЃС‚РµРЅР°Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.
@@ -383,11 +370,8 @@ Func _VK_wall_search()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_search
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -408,11 +392,8 @@ Func _VK_wall_getById()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_getById
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -433,11 +414,8 @@ Func _VK_wall_post()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_post
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -458,11 +436,8 @@ Func _VK_wall_repost()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_repost
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -483,11 +458,8 @@ Func _VK_wall_getReposts()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_getReposts
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -508,11 +480,8 @@ Func _VK_wall_edit()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_edit
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -533,11 +502,8 @@ Func _VK_wall_delete()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_delete
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -558,11 +524,8 @@ Func _VK_wall_restore()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_restore
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -583,11 +546,8 @@ Func _VK_wall_pin()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_pin
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -608,11 +568,8 @@ Func _VK_wall_unpin()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_unpin
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -639,9 +596,7 @@ Func _VK_wall_getComments($iOwnerID, $iPostID, $bNeedLikes = True, $iOffset = 0,
 	If @error Then Return SetError(@error, 0, $aResponse)
 
 	Return $aResponse[2][1]
-
 EndFunc   ;==>_VK_wall_getComments
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -662,11 +617,8 @@ Func _VK_wall_addComment()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_addComment
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -687,11 +639,8 @@ Func _VK_wall_editComment()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_editComment
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -712,11 +661,8 @@ Func _VK_wall_deleteComment()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_walldeleteComment
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -737,11 +683,8 @@ Func _VK_wall_restoreComment()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_restoreComment
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -762,11 +705,8 @@ Func _VK_wall_reportPost()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_reportPost
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -787,11 +727,8 @@ Func _VK_wall_reportComment()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_wall_reportComment
-
 #endregion Wall Functions
 
 
@@ -814,11 +751,8 @@ Func _VK_photoscreateAlbum()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_photoscreateAlbum
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -2401,14 +2335,8 @@ EndFunc   ;==>_VK_storagegetKeys
 
 #endregion Storage Functions
 
-<<<<<<< HEAD
-=======
-#region +Status Functions
->>>>>>> origin/master
-
 #region Status Functions
 ; #FUNCTION# =================================================================================================
-<<<<<<< Updated upstream
 ; Name...........:  _VK_statusget()
 ; Description ...: РџРѕР»СѓС‡Р°РµС‚ СЃС‚Р°С‚СѓСЃ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_statusGet($_sUID = "", $_bGID = False)
@@ -2437,48 +2365,9 @@ Func _VK_statusGet($_sUID = "", $_bGID = False)
 
 	Return ""
 EndFunc   ;==>_VK_statusget
-=======
-; Name...........: _VK_status_get()
-; Description ...: Получает статус пользователя.
-; Syntax.........: _VK_status_get($_sUID = "", $_bGID = False)
-; Parameters ....: $_sUID - UID пользователя или GID группы у которого(й) требуется получить статус. По умолчанию - текущий пользователь
-;				   $_bGID - установить True если необходимо получить статус группы.
-; Return values .: Успех - Строка со статусом и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
-;				   @error = 2 присваивается в случае если не было задано ID группу у которой необходимо получить статус.
-; Author ........: Fever, Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 1024.
-; ============================================================================================================
-Func _VK_status_get($_sUID = "", $_bGID = False)
-	Local $sStatus, $sResponse, $sWho
-
-	If Not $_bGID Then
-		$sWho = "user"
-	Else
-		If $_sUID = "" Then Return SetError(2, 0, "Group ID is empty!")
-		$sWho = "group"
-	EndIf
-
-	$sResponse =  _GetResponse("status.get", $sWho & "_id=" & $_sUID)
-
-	If @error Then
-		Return SetError(1, 0, $sResponse)
-	Else
-		$sStatus = _CreateArray($sResponse, "text")
-
-		If IsArray($sStatus) Then
-			Return $sStatus[0]
-		Else
-			Return ""
-		EndIf
-	EndIf
-EndFunc   ;==>_VK_status_get
->>>>>>> Stashed changes
-
 
 
 ; #FUNCTION# =================================================================================================
-<<<<<<< Updated upstream
 ; Name...........:  _VK_statusSet()
 ; Description ...: РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РЅРѕРІС‹Р№ СЃС‚Р°С‚СѓСЃ С‚РµРєСѓС‰РµРјСѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІСѓ.
 ; Syntax.........: _VK_statusSet($_sText = "")
@@ -2501,38 +2390,6 @@ Func _VK_statusSet($_sText = "", $_sGID = "")
 
 	Return $sResponse
 EndFunc   ;==>_VK_statusset
-<<<<<<< HEAD
-=======
-=======
-; Name...........: _VK_status_set()
-; Description ...: Устанавливает новый статус текущему пользователю.
-; Syntax.........: _VK_status_set($_sText = "", $_sGID = "")
-; Parameters ....: $_sGID - ID группы для которой необходимо сменить статусю По умолчанию - текущий пользователь
-;                  $_sText - текст статуса, который необходимо установить.  По умолчанию - очищение статуса
-; Return values .: Успех - 1 и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
-; Author ........: Fever, Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 1024.
-; ============================================================================================================
-Func _VK_status_set($_sText = "", $_sGID = "")
-	Local $sStatus, $sResponse, $sRequest
-
-	$sRequest = "text=" & _Encoding_URIEncode($_sText)
-
-	If $_sGID Then $sRequest &= "&group_id=" & $_sGID
-
-	$sResponse =  _GetResponse("status.set", $sRequest)
-
-	If @error Then
-		Return SetError(1, 0, $sResponse)
-	Else
-		$sStatus = _CreateArray($sResponse, "response")
-		Return $sStatus[0]
-	EndIf
-EndFunc   ;==>_VK_status_set
->>>>>>> Stashed changes
-
->>>>>>> origin/master
 #endregion Status Functions
 
 
@@ -7594,15 +7451,12 @@ Func _VK_notificationsmarkAsViewed()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_notificationsmarkAsViewed
-
 #endregion Notifications Functions
 
-#region Stats Functions
 
+#region Stats Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_statsget()
 ; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚РёСЃС‚РёРєСѓ СЃРѕРѕР±С‰РµСЃС‚РІР° РёР»Рё РїСЂРёР»РѕР¶РµРЅРёСЏ.
@@ -7621,11 +7475,8 @@ Func _VK_statsget()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_statsget
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7646,11 +7497,8 @@ Func _VK_statstrackVisitor()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_statstrackVisitor
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7671,15 +7519,12 @@ Func _VK_statsgetPostReach()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_statsgetPostReach
-
 #endregion Stats Functions
 
-#region Apps Functions
 
+#region Apps Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_appsgetCatalog()
 ; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїСЂРёР»РѕР¶РµРЅРёР№, РґРѕСЃС‚СѓРїРЅС‹С… РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ СЃР°Р№С‚Р° С‡РµСЂРµР· РєР°С‚Р°Р»РѕРі РїСЂРёР»РѕР¶РµРЅРёР№.
@@ -7698,11 +7543,8 @@ Func _VK_appsgetCatalog()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_appsgetCatalog
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7723,11 +7565,8 @@ Func _VK_appsget()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_appsget
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7748,11 +7587,8 @@ Func _VK_appssendRequest()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_appssendRequest
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7773,11 +7609,8 @@ Func _VK_appsdeleteAppRequests()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_appsdeleteAppRequests
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7798,15 +7631,12 @@ Func _VK_appsgetFriendsList()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_appsgetFriendsList
-
 #endregion Apps Functions
 
-#region Utilites Functions
 
+#region Utilites Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_utilscheckLink()
 ; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, СЏРІР»СЏРµС‚СЃСЏ Р»Рё РІРЅРµС€РЅСЏСЏ СЃСЃС‹Р»РєР° Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРЅРѕР№ РЅР° СЃР°Р№С‚Рµ Р’РљРѕРЅС‚Р°РєС‚Рµ.
@@ -7825,9 +7655,7 @@ Func _VK_utilscheckLink()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_utilscheckLink
 
 
@@ -7849,11 +7677,8 @@ Func _VK_utilsresolveScreenName()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_utilsresolveScreenName
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7874,15 +7699,12 @@ Func _VK_utilsgetServerTime()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_utilsgetServerTime
-
 #endregion Utilites Functions
 
-#region Database Functions
 
+#region Database Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetCountries()
 ; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє СЃС‚СЂР°РЅ.
@@ -7901,11 +7723,8 @@ Func _VK_databasegetCountries()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_databasegetCountries
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7926,11 +7745,8 @@ Func _VK_databasegetRegions()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_databasegetRegions
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7951,11 +7767,8 @@ Func _VK_databasegetStreetsById()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_databasegetStreetsById
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -7976,11 +7789,8 @@ Func _VK_databasegetCountriesById()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_databasegetCountriesById
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -8001,11 +7811,8 @@ Func _VK_databasegetCities()
 
 	If @error Then Return SetError(@error, 0, $sResponse)
 
-
 	Return $asReturn
-
 EndFunc   ;==>_VK_databasegetCities
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -8028,9 +7835,7 @@ Func _VK_databasegetCitiesById()
 
 
 	Return $asReturn
-
 EndFunc   ;==>_VK_databasegetCitiesById
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -8053,9 +7858,7 @@ Func _VK_databasegetUniversities()
 
 
 	Return $asReturn
-
 EndFunc   ;==>_VK_databasegetUniversities
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -8078,9 +7881,7 @@ Func _VK_databasegetSchools()
 
 
 	Return $asReturn
-
 EndFunc   ;==>_VK_databasegetSchools
-
 
 
 ; #FUNCTION# =================================================================================================
@@ -8107,7 +7908,6 @@ Func _VK_databasegetSchoolClasses()
 EndFunc   ;==>_VK_databasegetSchoolClasses
 
 
-
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetFaculties()
 ; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє С„Р°РєСѓР»СЊС‚РµС‚РѕРІ.
@@ -8132,7 +7932,6 @@ Func _VK_databasegetFaculties()
 EndFunc   ;==>_VK_databasegetFaculties
 
 
-
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetChairs()
 ; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєР°С„РµРґСЂ СѓРЅРёРІРµСЂСЃРёС‚РµС‚Р° РїРѕ СѓРєР°Р·Р°РЅРЅРѕРјСѓ С„Р°РєСѓР»СЊС‚РµС‚Сѓ.
@@ -8155,7 +7954,6 @@ Func _VK_databasegetChairs()
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetChairs
-
 #endregion Database Functions
 
 
@@ -8313,38 +8111,8 @@ Func _VK_SendRequest($sMethod, $sRequest, $bNeedToken = True)
 	Return $aResponse[1][1]
 EndFunc   ;==>_VK_SendRequest
 
-<<<<<<< HEAD
-; #FUNCTION# =================================================================================================
-=======
-
-; #FUNCTION# =================================================================================================
-; Name...........: _GetResponse()
-; Description ...: Запрос к серверу и проверка на ошибку
-; Syntax.........: _GetResponse($sMethod, $sRequest)
-; Parameters ....: $sMethod - метод к которому производится запрос
-;                  $sRequest - строка запроса
-; Return values .: Успех -  строка: ответ сервера
-;                  Неудача - установка @error = 1 и текст ошибки в возвращаемом значении.
-; Author ........: Medic84
-; Remarks .......: Отсутствуют
-; ============================================================================================================
-Func _GetResponse($sMethod, $sRequest)
-	Dim $sResponse, $sError
-
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/" & $sMethod & ".xml?" & $sRequest & "&access_token=" & $_sAccessToken), 4)
-
-	$sError = _VK_CheckForError($sResponse)
-
-	If $sError Then
-		Return SetError(1, 0, $sError)
-	EndIf
-
-	Return $sResponse
-EndFunc   ;==>_GetResponse
-
 
 ;===============================================================================
->>>>>>> origin/master
 ; Description:      _StringFormatTime - Get a string representation of a timestamp
 ;					according to the format string given to the function.
 ; Syntax:			_StringFormatTime("format", timestamp)
@@ -8407,19 +8175,11 @@ EndFunc   ;==>_StringFormatTime
 
 ; #FUNCTION# =================================================================================================
 ; Name...........: _Encoding_URIEncode()
-<<<<<<< HEAD
 ; Description ...: РљРѕРґРёСЂРѕРІР°РЅРёРµ С‚РµРєСЃС‚РѕРІРѕР№ СЃС‚СЂРѕРєРё РІ URI-РєРѕРґ
 ; Syntax.........: _Encoding_URIEncode($sString)
 ; Parameters ....: $sString - СЃС‚СЂРѕРєР°, РєРѕС‚РѕСЂСѓСЋ РЅРµРѕР±С…РѕРґРёРјРѕ РїСЂРµРѕР±СЂР°Р·РѕРІР°С‚СЊ
 ; Return values .: РЈСЃРїРµС… -  Р·Р°РєРѕРґРёСЂРѕРІР°РЅРЅС‹Р№ С‚РµРєСЃС‚
 ;                  РќРµСѓРґР°С‡Р° - 0
-=======
-; Description ...: Кодирование текстовой строки в URI-код.
-; Syntax.........: _Encoding_URIEncode($sString)
-; Parameters ....: $sString - строка, которую необходимо преобразовать
-; Return values .: Успех -  закодированный текст
-;                  Неудача - 0
->>>>>>> origin/master
 ; Author ........: CreatoR
 ; Remarks .......: РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
 ; ============================================================================================================
