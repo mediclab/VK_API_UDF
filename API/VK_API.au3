@@ -503,7 +503,7 @@ EndFunc   ;==>_VK_groupsGetByID
 ;				   Обратите внимание, что ссылки на аудиозаписи привязаны к ip адресу.
 ; ============================================================================================================
 Func _VK_audioGet($_iNeed_User = 0, $_sUID = "", $_sGID = "", $_iAlbumID = "", $_sAIDs = "", $_iCount = "", $_iOffset = "")
-	Local $Temp, $sResponse, $asFields[6] = ["aid", "owner_id", "artist", "title", "duration", "url"]
+	Local $Temp, $sResponse, $asFields[7] = ["aid", "owner_id", "artist", "title", "duration", "url", "genre"]
 	Local $aOwnerFields[4] = ["id", "photo", "name", "name_gen"]
 
 	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/audio.get.xml?access_token=" & $_sAccessToken & "&uid=" & $_sUID & "&gid=" & $_sGID & "&aids=" & $_sAIDs & "&need_user=" & $_iNeed_User & "&album_id=" & $_iAlbumID & "&count=" & $_iCount & "&offset=" & $_iOffset), 4)

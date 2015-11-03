@@ -2,229 +2,256 @@
 #include <IE.au3>
 #include <WindowsConstants.au3>
 #include <GUIConstantsEx.au3>
-#include <Array.au3>
+#include "JSON.au3"
 
 ;Opt("MustDeclareVars",1)
 
-Global $_sAccessToken
+Global $_sAccessToken = ""
+Global $_sAPIVer = "5.37"
+
+Global Enum $vkSEXNone = 0, $vkSEXFemale, $vkSEXMale
+Global Enum $vkMartial_NotMarried = 1, $vkMartial_Meets, $vkMartial_Engaged, $vkMartial_Married, $vkMartial_InLove, $vkMartial_AllDifficult, $vkMartial_ActiveSearch
+Global Enum $vkRadius_300m = 1, $vkRadius_2400m, $vkRadius_18kmm, $vkRadius_150kmm
+Global $vkReportType_Porn = "porn", $vkReportType_Spam = "spam", $vkReportType_Insult = "insult", $vkReportType_Advertisment = "advertisment"
 
 ; #FUNCTION# =================================================================================================
 ; Name...........: _VK_SignIn()
-; Description ...: Совершает авторизацию на сайте ВКонтакте
-; Syntax.........: _VK_SignIn($iAppID, $sScope, $sRedirect_uri = "https://oauth.vk.com/blank.html", $sResponse_type = "token")
-; Parameters ....: $iAppID - App ID приложения полученного на сайте ВКонтакте
-;    			   $sScope - Битовые маски для доступа к разным возможностям ВКонтакте (Будут указаны к описаниям функций)
-;				   $sRedirect_uri -
-;				   $sDisplay -
-;				   $sResponse_type -
-; Return values .: При удачной Авторизации возвращает ключ доступа для использованя остальных функций
+; Description ...: РЎРѕРІРµСЂС€Р°РµС‚ Р°РІС‚РѕСЂРёР·Р°С†РёСЋ РЅР° СЃР°Р№С‚Рµ Р’РљРѕРЅС‚Р°РєС‚Рµ
+; Syntax.........: _VK_SignIn($iAppID, $sScope, $sResponse_type)
+; Parameters ....: $iAppID - App ID РїСЂРёР»РѕР¶РµРЅРёСЏ РїРѕР»СѓС‡РµРЅРЅРѕРіРѕ РЅР° СЃР°Р№С‚Рµ Р’РљРѕРЅС‚Р°РєС‚Рµ
+;    			   $sScope - Р‘РёС‚РѕРІС‹Рµ РјР°СЃРєРё РґР»СЏ РґРѕСЃС‚СѓРїР° Рє СЂР°Р·РЅС‹Рј РІРѕР·РјРѕР¶РЅРѕСЃС‚СЏРј Р’РљРѕРЅС‚Р°РєС‚Рµ (Р‘СѓРґСѓС‚ СѓРєР°Р·Р°РЅС‹ Рє РѕРїРёСЃР°РЅРёСЏРј С„СѓРЅРєС†РёР№)
+;				   $sDisplay - Р’РёРґ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РѕРєРЅР° Р°РІС‚РѕСЂРёР·Р°С†РёРё
+;				   $sResponse_type - РўРёРї РѕС‚РІРµС‚Р° РѕС‚ СЃРµСЂРІРµСЂР°
+; Return values .: РџСЂРё СѓРґР°С‡РЅРѕР№ РђРІС‚РѕСЂРёР·Р°С†РёРё РІРѕР·РІСЂР°С‰Р°РµС‚ РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅСЏ РѕСЃС‚Р°Р»СЊРЅС‹С… С„СѓРЅРєС†РёР№
 ; Author ........: Fever
-; Remarks .......: Отсутствуют
+; Remarks .......: РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
 ; ============================================================================================================
-Func _VK_SignIn($iAppID, $sScope,  $sRedirect_uri = "https://oauth.vk.com/blank.html", $sDisplay = "wap", $sResponse_type = "token")
-	Local $sOAuth_url = "https://oauth.vk.com/authorize?client_id=" & $iAppID & "&scope=" & $sScope & "&display=" & $sDisplay & "&redirect_uri=" & $sRedirect_uri & "&response_type=" & $sResponse_type
-	Return __guiAccessToken($sOAuth_url, "ВКонтакте | Вход", $sRedirect_uri)
+Func _VK_SignIn($iAppID, $sScope, $sDisplay = "wap", $sResponse_type = "token")
+	Local $sOAuth_url = "https://oauth.vk.com/authorize?client_id=" & $iAppID & "&scope=" & $sScope & "&display=" & $sDisplay & "&redirect_uri=https://oauth.vk.com/blank.html&response_type=" & $sResponse_type & "&v=" & $_sAPIVer & "&lang=ru"
+	Return __guiAccessToken($sOAuth_url, "Р’РљРѕРЅС‚Р°РєС‚Рµ | Р’С…РѕРґ")
 EndFunc   ;==>_VK_SignIn
 
 
 #region User Functions
-
 ; #FUNCTION# =================================================================================================
-; Name...........:  _VK_users_get()
-; Description ...: Возвращает расширенную информацию о пользователях.
-; Syntax.........: _VK_users_get()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Name...........:  _VK_users_Get()
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЂР°СЃС€РёСЂРµРЅРЅСѓСЋ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏС….
+; Syntax.........: _VK_users_Get($sUser_ids, $sFields, $sName_case)
+; Parameters ....: 	$sUser_ids - РїРµСЂРµС‡РёСЃР»РµРЅРЅС‹Рµ С‡РµСЂРµР· Р·Р°РїСЏС‚СѓСЋ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РёР»Рё РёС… РєРѕСЂРѕС‚РєРёРµ РёРјРµРЅР° (screen_name). РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ вЂ” РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. РЎРїРёСЃРѕРє СЃС‚СЂРѕРє, СЂР°Р·РґРµР»РµРЅРЅС‹С… С‡РµСЂРµР· Р·Р°РїСЏС‚СѓСЋ, РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РґРѕР»Р¶РЅРѕ СЃРѕСЃС‚Р°РІР»СЏС‚СЊ РЅРµ Р±РѕР»РµРµ 1000
+;					$sFields - СЃРїРёСЃРѕРє РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… РїРѕР»РµР№ РїСЂРѕС„РёР»РµР№, РєРѕС‚РѕСЂС‹Рµ РЅРµРѕР±С…РѕРґРёРјРѕ РІРµСЂРЅСѓС‚СЊ. РЎРј. РїРѕРґСЂРѕР±РЅРѕРµ РѕРїРёСЃР°РЅРёРµ.
+;							Р”РѕСЃС‚СѓРїРЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ: sex, bdate, city, country, photo_50, photo_100, photo_200_orig, photo_200, photo_400_orig, photo_max, photo_max_orig, photo_id, online, online_mobile, domain, has_mobile, contacts, connections, site, education, universities, schools, can_post, can_see_all_posts, can_see_audio, can_write_private_message, status, last_seen, common_count, relation, relatives, counters, screen_name, maiden_name, timezone, occupation,activities, interests, music, movies, tv, books, games, about, quotes, personal, friend_status, military, career
+;					$sName_case - РїР°РґРµР¶ РґР»СЏ СЃРєР»РѕРЅРµРЅРёСЏ РёРјРµРЅРё Рё С„Р°РјРёР»РёРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. Р’РѕР·РјРѕР¶РЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ: РёРјРµРЅРёС‚РµР»СЊРЅС‹Р№ вЂ“ nom, СЂРѕРґРёС‚РµР»СЊРЅС‹Р№ вЂ“ gen, РґР°С‚РµР»СЊРЅС‹Р№ вЂ“ dat, РІРёРЅРёС‚РµР»СЊРЅС‹Р№ вЂ“ acc, С‚РІРѕСЂРёС‚РµР»СЊРЅС‹Р№ вЂ“ ins, РїСЂРµРґР»РѕР¶РЅС‹Р№ вЂ“ abl. РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ nom.
+; Return values .: РЈСЃРїРµС… -  Р’РѕР·РІСЂР°С‰Р°РµС‚ РјР°СЃСЃРёРІ РѕР±СЉРµРєС‚РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р­С‚Рѕ РѕС‚РєСЂС‹С‚С‹Р№ РјРµС‚РѕРґ, РЅРµ С‚СЂРµР±СѓСЋС‰РёР№ access_token. Рў.Рµ. РІС…РѕРґ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ.
 ; ============================================================================================================
-Func _VK_users_get()
-	Local $sResponse, $asReturn
+Func _VK_users_Get($sUser_ids, $sFields = Null, $sName_case = "nom")
+	Local $aResponse, $bNeedToken, $sQuery
 
-	$sResponse = _VK_SendRequest("users.get.xml", "")
+	$sFields = (Not $sFields)) ? "&fields=" & $sFields : $sFields
+	$bNeedToken = ($_sAccessToken = "") ? False : True
+	$sQuery = "user_ids=" & $sUser_ids & $sFields & "&name_case=" & $sName_case
+
+	$aResponse = _VK_SendRequest("users.get", $sQuery, $bNeedToken)
 
 	If @error Then Return SetError(@error, 0, $aResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-
-	Return $asReturn
-EndFunc   ;==>_VK_users_get
-
+	Return $aResponse
+EndFunc   ;==>_VK_users_Get
 
 
 ; #FUNCTION# =================================================================================================
-; Name...........:  _VK_users_search()
-; Description ...: Возвращает список пользователей в соответствии с заданным критерием поиска.
+; Name...........:  _VK_users_Search()
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РІ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРё СЃ Р·Р°РґР°РЅРЅС‹Рј РєСЂРёС‚РµСЂРёРµРј РїРѕРёСЃРєР°.
 ; Syntax.........: _VK_users_search()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
-Func _VK_users_search()
-	Local $sResponse, $asReturn
+Func _VK_users_Search()
+;~ 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("users.search.xml", "")
+;~ 	$sResponse = _VK_SendRequest("users.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+;~ 	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-	Return $asReturn
-
+;~ 	Return $sResponse
 EndFunc   ;==>_VK_users_search
-
 
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_users_isAppUser()
-; Description ...: Возвращает информацию о том, установил ли пользователь приложение.
-; Syntax.........: _VK_users_isAppUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, СѓСЃС‚Р°РЅРѕРІРёР» Р»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїСЂРёР»РѕР¶РµРЅРёРµ.
+; Syntax.........: _VK_users_isAppUser($iUserID)
+; Parameters ....: $sUserID - РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. Р¦РµР»РѕРµ С‡РёСЃР»Рѕ, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+; Return values .: РЈСЃРїРµС… - Р’РѕР·РІСЂР°С‰Р°РµС‚ 1 РІ СЃР»СѓС‡Р°Рµ, РµСЃР»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СѓСЃС‚Р°РЅРѕРІРёР» Сѓ СЃРµР±СЏ РґР°РЅРЅРѕРµ РїСЂРёР»РѕР¶РµРЅРёРµ, РёРЅР°С‡Рµ 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
 ; ============================================================================================================
-Func _VK_users_isAppUser()
+Func _VK_users_isAppUser($iUserID)
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("users.isAppUser.xml", "")
+	$sResponse = _VK_SendRequest("users.isAppUser", "user_id=" & $iUserID)
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-	Return $asReturn
-
+	Return $sResponse
 EndFunc   ;==>_VK_users_isAppUser
-
 
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_users_getSubscriptions()
-; Description ...: Возвращает список идентификаторов пользователей и сообществ, которые входят в список подписок пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Рё СЃРѕРѕР±С‰РµСЃС‚РІ, РєРѕС‚РѕСЂС‹Рµ РІС…РѕРґСЏС‚ РІ СЃРїРёСЃРѕРє РїРѕРґРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_users_getSubscriptions()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Parameters ....: 	$iUserID - РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ, РїРѕРґРїРёСЃРєРё РєРѕС‚РѕСЂРѕРіРѕ РЅРµРѕР±С…РѕРґРёРјРѕ РїРѕР»СѓС‡РёС‚СЊ. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+;					$iExtended - 1 вЂ“ РІРѕР·РІСЂР°С‰Р°РµС‚ РѕР±СЉРµРґРёРЅРµРЅРЅС‹Р№ СЃРїРёСЃРѕРє, СЃРѕРґРµСЂР¶Р°С‰РёР№ РѕР±СЉРµРєС‚С‹ РіСЂСѓРїРї Рё РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№. 0 вЂ“ РІРѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РіСЂСѓРїРї Рё РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РѕС‚РґРµР»СЊРЅРѕ. (РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 0) Р¤Р»Р°Рі, РјРѕР¶РµС‚ РїСЂРёРЅРёРјР°С‚СЊ Р·РЅР°С‡РµРЅРёСЏ 1 РёР»Рё 0
+;					$iOffset - СЃРјРµС‰РµРЅРёРµ РЅРµРѕР±С…РѕРґРёРјРѕРµ РґР»СЏ РІС‹Р±РѕСЂРєРё РѕРїСЂРµРґРµР»РµРЅРЅРѕРіРѕ РїРѕРґРјРЅРѕР¶РµСЃС‚РІР° РїРѕРґРїРёСЃРѕРє. Р­С‚РѕС‚ РїР°СЂР°РјРµС‚СЂ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ С‚РѕР»СЊРєРѕ РµСЃР»Рё РїРµСЂРµРґР°РЅ $iExtended = 1. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ
+;					$iCount - РєРѕР»РёС‡РµСЃС‚РІРѕ РїРѕРґРїРёСЃРѕРє, РєРѕС‚РѕСЂС‹Рµ РЅРµРѕР±С…РѕРґРёРјРѕ РІРµСЂРЅСѓС‚СЊ. Р­С‚РѕС‚ РїР°СЂР°РјРµС‚СЂ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ С‚РѕР»СЊРєРѕ РµСЃР»Рё РїРµСЂРµРґР°РЅ $iExtended = 1. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 20, РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ 200
+;					$sFields - СЃРїРёСЃРѕРє РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… РїРѕР»РµР№, РєРѕС‚РѕСЂС‹Рµ РЅРµРѕР±С…РѕРґРёРјРѕ РІРµСЂРЅСѓС‚СЊ. РЎРїРёСЃРѕРє СЃС‚СЂРѕРє, СЂР°Р·РґРµР»РµРЅРЅС‹С… С‡РµСЂРµР· Р·Р°РїСЏС‚СѓСЋ
+; Return values .: РЈСЃРїРµС… - РІРѕР·РІСЂР°С‰Р°РµС‚ РѕР±СЉРµРєС‚С‹ users Рё groups, РєР°Р¶РґС‹Р№ РёР· РєРѕС‚РѕСЂС‹С… СЃРѕРґРµСЂР¶РёС‚ РїРѕР»Рµ count вЂ” РєРѕР»РёС‡РµСЃС‚РІРѕ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ Рё items вЂ” СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РёР»Рё РїСѓР±Р»РёС‡РЅС‹С… СЃС‚СЂР°РЅРёС†, РЅР° РєРѕС‚РѕСЂС‹Рµ РїРѕРґРїРёСЃР°РЅ С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ (РёР· СЂР°Р·РґРµР»Р° В«РРЅС‚РµСЂРµСЃРЅС‹Рµ СЃС‚СЂР°РЅРёС†С‹В»).
+;						Р•СЃР»Рё Р±С‹Р» Р·Р°РґР°РЅ РїР°СЂР°РјРµС‚СЂ $iExtended = 1, РІРѕР·РІСЂР°С‰Р°РµС‚ РѕР±СЉРµРґРёРЅРµРЅРЅС‹Р№ СЃРїРёСЃРѕРє РѕР±СЉРµРєС‚РѕРІ СЃРѕРѕР±С‰РµСЃС‚РІ Рё РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р­С‚Рѕ РѕС‚РєСЂС‹С‚С‹Р№ РјРµС‚РѕРґ, РЅРµ С‚СЂРµР±СѓСЋС‰РёР№ access_token. Рў.Рµ. РІС…РѕРґ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ.
 ; ============================================================================================================
-Func _VK_users_getSubscriptions()
-	Local $sResponse, $asReturn
+Func _VK_users_getSubscriptions($iUserID = 0, $iExtended = 0, $iOffset = 0, $iCount = 20, $sFields = Null)
+	Local $aResponse, $sQuery = "", $bNeedToken
 
-	$sResponse = _VK_SendRequest("users.getSubscriptions.xml", "")
+	$sQuery &= ($iUserID) ? "&" : "user_id=" & $iUserID & "&"
+	$sQuery &= "extended=" & $iExtended & "&offset=" & $iOffset & "&count=" & $iCount & "&fields=" & $sFields
+	$bNeedToken = ($_sAccessToken = "") ? False : True
+
+	$aResponse = _VK_SendRequest("users.getSubscriptions", $sQuery, $bNeedToken)
 
 	If @error Then Return SetError(@error, 0, $aResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-	Return $asReturn
-
+	Return $aResponse
 EndFunc   ;==>_VK_users_getSubscriptions
 
 
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_users_getFollowers()
-; Description ...: Возвращает список идентификаторов пользователей, которые являются подписчиками пользователя. Идентификаторы пользователей в списке отсортированы в порядке убывания времени их добавления.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РєРѕС‚РѕСЂС‹Рµ СЏРІР»СЏСЋС‚СЃСЏ РїРѕРґРїРёСЃС‡РёРєР°РјРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РІ СЃРїРёСЃРєРµ РѕС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅС‹ РІ РїРѕСЂСЏРґРєРµ СѓР±С‹РІР°РЅРёСЏ РІСЂРµРјРµРЅРё РёС… РґРѕР±Р°РІР»РµРЅРёСЏ.
 ; Syntax.........: _VK_users_getFollowers()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Parameters ....: 	$iUserID - РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+;					$iOffset - СЃРјРµС‰РµРЅРёРµ, РЅРµРѕР±С…РѕРґРёРјРѕРµ РґР»СЏ РІС‹Р±РѕСЂРєРё РѕРїСЂРµРґРµР»РµРЅРЅРѕРіРѕ РїРѕРґРјРЅРѕР¶РµСЃС‚РІР° РїРѕРґРїРёСЃС‡РёРєРѕРІ. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ
+;					$iCount - РєРѕР»РёС‡РµСЃС‚РІРѕ РїРѕРґРїРёСЃС‡РёРєРѕРІ, РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РєРѕС‚РѕСЂС‹С… РЅСѓР¶РЅРѕ РїРѕР»СѓС‡РёС‚СЊ. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 100, РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ 1000
+;					$sFields - СЃРїРёСЃРѕРє РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… РїРѕР»РµР№, РєРѕС‚РѕСЂС‹Рµ РЅРµРѕР±С…РѕРґРёРјРѕ РІРµСЂРЅСѓС‚СЊ.
+;								Р”РѕСЃС‚СѓРїРЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ: nickname, screen_name, sex, bdate, city, country, timezone, photo_50, photo_100, photo_200_orig, has_mobile, contacts, education, online, counters, relation, last_seen, status, can_write_private_message, can_see_all_posts, can_post, universities
+;					$sName_case - РїР°РґРµР¶ РґР»СЏ СЃРєР»РѕРЅРµРЅРёСЏ РёРјРµРЅРё Рё С„Р°РјРёР»РёРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. Р’РѕР·РјРѕР¶РЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ: РёРјРµРЅРёС‚РµР»СЊРЅС‹Р№ вЂ“ nom, СЂРѕРґРёС‚РµР»СЊРЅС‹Р№ вЂ“ gen, РґР°С‚РµР»СЊРЅС‹Р№ вЂ“ dat, РІРёРЅРёС‚РµР»СЊРЅС‹Р№ вЂ“ acc, С‚РІРѕСЂРёС‚РµР»СЊРЅС‹Р№ вЂ“ ins, РїСЂРµРґР»РѕР¶РЅС‹Р№ вЂ“ abl. РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ nom.
+; Return values .: РЈСЃРїРµС… - Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РѕР±СЉРµРєС‚РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РєРѕС‚РѕСЂС‹Рµ СЏРІР»СЏСЋС‚СЃСЏ РїРѕРґРїРёСЃС‡РёРєР°РјРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ uid. Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р­С‚Рѕ РѕС‚РєСЂС‹С‚С‹Р№ РјРµС‚РѕРґ, РЅРµ С‚СЂРµР±СѓСЋС‰РёР№ access_token. Рў.Рµ. РІС…РѕРґ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ.
 ; ============================================================================================================
-Func _VK_users_getFollowers()
-	Local $sResponse, $asReturn
+Func _VK_users_getFollowers($iUserID = 0, $iOffset = 0, $iCount = 100, $sFields = "", $sName_case = "nom")
+	Local $sResponse, $sQuery = "", $bNeedToken
 
-	$sResponse = _VK_SendRequest("users.getFollowers.xml", "")
+	$sFields = (Not $sFields) ? "&fields=" & $sFields : $sFields
+	$sQuery &= ($iUserID) ? "&" : "user_id=" & $iUserID & "&"
+	$sQuery &=  "offset=" & $iOffset & "&count=" & $iCount  & $sFields & "&name_case=" & $sName_case
+
+	$bNeedToken = ($_sAccessToken = "") ? False : True
+
+	$aResponse = _VK_SendRequest("users.getFollowers", $sQuery, $bNeedToken)
 
 	If @error Then Return SetError(@error, 0, $aResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-	Return $asReturn
-
+	Return $aResponse
 EndFunc   ;==>_VK_users_getFollowers
 
 
-
 ; #FUNCTION# =================================================================================================
-; Name...........:  _VK_users_report()
-; Description ...: Позволяет пожаловаться на пользователя.
-; Syntax.........: _VK_users_report()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Name...........:  _VK_users_Report()
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР¶Р°Р»РѕРІР°С‚СЊСЃСЏ РЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
+; Syntax.........: _VK_users_Report($iUserID, $sType[, $sComment])
+; Parameters ....: 	$iUserID - РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ, РЅР° РєРѕС‚РѕСЂРѕРіРѕ РЅСѓР¶РЅРѕ РїРѕРґР°С‚СЊ Р¶Р°Р»РѕР±Сѓ. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ, РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ
+;					$sType - СЃС‚СЂРѕРєР°, РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ. РўРёРї Р¶Р°Р»РѕР±С‹, РјРѕР¶РµС‚ РїСЂРёРЅРёРјР°С‚СЊ СЃР»РµРґСѓСЋС‰РёРµ Р·РЅР°С‡РµРЅРёСЏ:
+;							$vkReportType_Porn вЂ” РїРѕСЂРЅРѕРіСЂР°С„РёСЏ;
+;							$vkReportType_Spam вЂ” СЂР°СЃСЃС‹Р»РєР° СЃРїР°РјР°;
+;							$vkReportType_Insult вЂ” РѕСЃРєРѕСЂР±РёС‚РµР»СЊРЅРѕРµ РїРѕРІРµРґРµРЅРёРµ;
+;							$vkReportType_Advertisment вЂ” СЂРµРєР»Р°РјРЅР°СЏ СЃС‚СЂР°РЅРёС†Р°, Р·Р°СЃРѕСЂСЏСЋС‰Р°СЏ РїРѕРёСЃРє.
+;					$sComment - РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє Р¶Р°Р»РѕР±Рµ РЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. РЎС‚СЂРѕРєР°
+; Return values .: РЈСЃРїРµС… - Р’РѕР·РІСЂР°С‰Р°РµС‚ 1 РїСЂРё СѓСЃРїРµС€РЅРѕР№ РѕС‚РїСЂР°РІРєРµ Р¶Р°Р»РѕР±С‹.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
 ; ============================================================================================================
-Func _VK_users_report()
-	Local $sResponse, $asReturn
+Func _VK_users_Report($iUserID, $sType, $sComment = Null)
+	Local $sResponse, $sQuery = ""
 
-	$sResponse = _VK_SendRequest("users.report.xml", "")
+	$sQuery = "user_id=" & $iUserID & "&type=" & $sType & "&comment=" & $sComment
+	$sResponse = _VK_SendRequest("users.report", $sQuery)
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-	Return $asReturn
-
-EndFunc   ;==>_VK_users_report
-
+	Return $sResponse
+EndFunc   ;==>_VK_users_Report
 
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_users_getNearby()
-; Description ...: Индексирует текущее местоположение пользователя и возвращает список пользователей, которые находятся вблизи.
+; Description ...: РРЅРґРµРєСЃРёСЂСѓРµС‚ С‚РµРєСѓС‰РµРµ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РІРѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РєРѕС‚РѕСЂС‹Рµ РЅР°С…РѕРґСЏС‚СЃСЏ РІР±Р»РёР·Рё.
 ; Syntax.........: _VK_users_getNearby()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Parameters ....: 	$fLatitude - РіРµРѕРіСЂР°С„РёС‡РµСЃРєР°СЏ С€РёСЂРѕС‚Р° С‚РѕС‡РєРё, РІ РєРѕС‚РѕСЂРѕР№ РІ РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ РЅР°С…РѕРґРёС‚СЃСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ, Р·Р°РґР°РЅРЅР°СЏ РІ РіСЂР°РґСѓСЃР°С… (РѕС‚ -90 РґРѕ 90). Р”СЂРѕР±РЅРѕРµ С‡РёСЃР»Рѕ, РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ
+;					$fLongitude - РіРµРѕРіСЂР°С„РёС‡РµСЃРєР°СЏ РґРѕР»РіРѕС‚Р° С‚РѕС‡РєРё, РІ РєРѕС‚РѕСЂРѕР№ РІ РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ РЅР°С…РѕРґРёС‚СЃСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ, Р·Р°РґР°РЅРЅР°СЏ РІ РіСЂР°РґСѓСЃР°С… (РѕС‚ -180 РґРѕ 180). Р”СЂРѕР±РЅРѕРµ С‡РёСЃР»Рѕ, РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ
+;					$iAccuracy - С‚РѕС‡РЅРѕСЃС‚СЊ С‚РµРєСѓС‰РµРіРѕ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ РјРµС‚СЂР°С…. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ
+;					$iTimeout - РІСЂРµРјСЏ РІ СЃРµРєСѓРЅРґР°С… С‡РµСЂРµР· РєРѕС‚РѕСЂРѕРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РґРѕР»Р¶РµРЅ РїРµСЂРµСЃС‚Р°С‚СЊ РЅР°С…РѕРґРёС‚СЊСЃСЏ С‡РµСЂРµР· РїРѕРёСЃРє РїРѕ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёСЋ. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 7200
+;					$iRadius - С‚РёРї СЂР°РґРёСѓСЃР° Р·РѕРЅС‹ РїРѕРёСЃРєР° (РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ $vkRadius_300m)
+;							$vkRadius_300m вЂ” 300 РјРµС‚СЂРѕРІ;
+;							$vkRadius_2400m вЂ” 2400 РјРµС‚СЂРѕРІ;
+;							$vkRadius_18km вЂ” 18 РєРёР»РѕРјРµС‚СЂРѕРІ;
+;							$vkRadius_150m вЂ” 150 РєРёР»РѕРјРµС‚СЂРѕРІ.
+;					$sFields - СЃРїРёСЃРѕРє РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… РїРѕР»РµР№, РєРѕС‚РѕСЂС‹Рµ РЅРµРѕР±С…РѕРґРёРјРѕ РІРµСЂРЅСѓС‚СЊ.
+;								Р”РѕСЃС‚СѓРїРЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ: sex, bdate, city, country, photo_50, photo_100, photo_200_orig, photo_200, photo_400_orig, photo_max, photo_max_orig, online, online_mobile, domain, has_mobile, contacts, connections, site, education, universities, schools, can_post, can_see_all_posts, can_see_audio, can_write_private_message, status, last_seen, common_count, relation, relatives, counters, screen_name, maiden_name, timezone, occupation
+;					$sName_case - РїР°РґРµР¶ РґР»СЏ СЃРєР»РѕРЅРµРЅРёСЏ РёРјРµРЅРё Рё С„Р°РјРёР»РёРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. Р’РѕР·РјРѕР¶РЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ: РёРјРµРЅРёС‚РµР»СЊРЅС‹Р№ вЂ“ nom, СЂРѕРґРёС‚РµР»СЊРЅС‹Р№ вЂ“ gen, РґР°С‚РµР»СЊРЅС‹Р№ вЂ“ dat, РІРёРЅРёС‚РµР»СЊРЅС‹Р№ вЂ“ acc, С‚РІРѕСЂРёС‚РµР»СЊРЅС‹Р№ вЂ“ ins, РїСЂРµРґР»РѕР¶РЅС‹Р№ вЂ“ abl. РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ nom.
+; Return values .: РЈСЃРїРµС… - Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РєРѕС‚РѕСЂС‹Рµ РЅР°С…РѕРґСЏС‚СЃСЏ РІР±Р»РёР·Рё
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
 ; ============================================================================================================
-Func _VK_users_getNearby()
-	Local $sResponse, $asReturn
+Func _VK_users_getNearby($fLatitude, $fLongitude, $iAccuracy = 0, $iTimeout = 7200, $iRadius = $vkRadius_300m, $sFields = Null, $sName_case = "nom")
+	Local $aResponse, $sQuery = "", $sAccuracy = ""
 
-	$sResponse = _VK_SendRequest("users.getNearby.xml", "")
+	$sAccuracy = ($iAccuracy > 0) ? "&accuracy=" & $iAccuracy : $sAccuracy
+	$sFields = (Not $sFields) ? "&fields=" & $sFields : $sFields
+	$sQuery = "latitude=" & $fLatitude & "&longitude=" & $fLongitude & $sAccuracy & "&timeout=" & $iTimeout & "&radius=" & $iRadius & $sFields & "&name_case=" & $sName_case
+
+	$aResponse = _VK_SendRequest("users.getNearby", $sQuery)
 
 	If @error Then Return SetError(@error, 0, $aResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-	Return $asReturn
-
+	Return $aResponse
 EndFunc   ;==>_VK_users_getNearby
-
 #endregion User Functions
 
-#region Authorize Functions
 
+#region Authorize Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_auth_checkPhone()
-; Description ...: Проверяет правильность введённого номера.
+; Description ...: РџСЂРѕРІРµСЂСЏРµС‚ РїСЂР°РІРёР»СЊРЅРѕСЃС‚СЊ РІРІРµРґС‘РЅРЅРѕРіРѕ РЅРѕРјРµСЂР°.
 ; Syntax.........: _VK_auth_checkPhone()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_auth_checkPhone()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("auth.checkPhone.xml", "")
+	$sResponse = _VK_SendRequest("auth.checkPhone", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_auth_checkPhone
@@ -233,23 +260,23 @@ EndFunc   ;==>_VK_auth_checkPhone
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_auth_signup()
-; Description ...: Регистрирует нового пользователя по номеру телефона.
+; Description ...: Р РµРіРёСЃС‚СЂРёСЂСѓРµС‚ РЅРѕРІРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕ РЅРѕРјРµСЂСѓ С‚РµР»РµС„РѕРЅР°.
 ; Syntax.........: _VK_auth_signup()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_auth_signup()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("auth.signup.xml", "")
+	$sResponse = _VK_SendRequest("auth.signup", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_auth_signup
@@ -258,23 +285,23 @@ EndFunc   ;==>_VK_auth_signup
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_auth_confirm()
-; Description ...: Завершает регистрацию нового пользователя, начатую методом auth.signup, по коду, полученному через SMS.
+; Description ...: Р—Р°РІРµСЂС€Р°РµС‚ СЂРµРіРёСЃС‚СЂР°С†РёСЋ РЅРѕРІРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ, РЅР°С‡Р°С‚СѓСЋ РјРµС‚РѕРґРѕРј auth.signup, РїРѕ РєРѕРґСѓ, РїРѕР»СѓС‡РµРЅРЅРѕРјСѓ С‡РµСЂРµР· SMS.
 ; Syntax.........: _VK_auth_confirm()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_auth_confirm()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("auth.confirm.xml", "")
+	$sResponse = _VK_SendRequest("auth.confirm", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_auth_confirm
@@ -283,75 +310,80 @@ EndFunc   ;==>_VK_auth_confirm
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_auth_restore()
-; Description ...: Позволяет восстановить доступ к аккаунту, используя код, полученный через SMS.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РґРѕСЃС‚СѓРї Рє Р°РєРєР°СѓРЅС‚Сѓ, РёСЃРїРѕР»СЊР·СѓСЏ РєРѕРґ, РїРѕР»СѓС‡РµРЅРЅС‹Р№ С‡РµСЂРµР· SMS.
 ; Syntax.........: _VK_auth_restore()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_auth_restore()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("auth.restore.xml", "")
+	$sResponse = _VK_SendRequest("auth.restore", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_auth_restore
 
 #endregion Authorize Functions
 
-#region Wall Functions
 
+#region Wall Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_get()
-; Description ...: Возвращает список записей со стены пользователя или сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р·Р°РїРёСЃРµР№ СЃРѕ СЃС‚РµРЅС‹ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_wall_get()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РјР°СЃСЃРёРІРѕРІ СЃ РґР°РЅРЅС‹РјРё Рѕ Р·Р°РїРёСЃСЏС… Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
-Func _VK_wall_get()
-	Local $sResponse, $asReturn
+Func _VK_wall_get($i_sOwnerID, $iOffset, $iCount, $sFilter = "all", $iExtended = 0, $sFields = "city, country, place, description, wiki_page, members_count, counters, start_date, finish_date, can_post, can_see_all_posts, activity, status, contacts, links, fixed_post, verified, site, can_create_topic")
+	Local $aResponse, $sOwner, $sResponseText, $bNeedToken
 
-	$sResponse = _VK_SendRequest("wall.get.xml", "")
+	$sResponseText = (Not IsInt($i_sOwnerID)) ? "domain=" & $i_sOwnerID : $sOwner = "owner_id=" & $i_sOwnerID
+	$sResponseText &= "&offset=" & $iOffset & "&count=" & $iCount & "&filter=" & $sFilter
+
+	If $iExtended Then $sResponseText &=  "&extended=" & $iExtended & "&fields=" & $sFields
+
+	$bNeedToken = ($_sAccessToken = "") ? False : True
+
+	$aResponse = _VK_SendRequest("wall.get", $sResponseText, $bNeedToken)
 
 	If @error Then Return SetError(@error, 0, $aResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-	Return $asReturn
-
+	Return $aResponse[2][1]
 EndFunc   ;==>_VK_wall_get
 
 
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_search()
-; Description ...: Метод, позволяющий осуществлять поиск по стенам пользователей.
+; Description ...: РњРµС‚РѕРґ, РїРѕР·РІРѕР»СЏСЋС‰РёР№ РѕСЃСѓС‰РµСЃС‚РІР»СЏС‚СЊ РїРѕРёСЃРє РїРѕ СЃС‚РµРЅР°Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.
 ; Syntax.........: _VK_wall_search()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_search()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.search.xml", "")
+	$sResponse = _VK_SendRequest("wall.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_search
@@ -360,23 +392,23 @@ EndFunc   ;==>_VK_wall_search
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_getById()
-; Description ...: Возвращает список записей со стен пользователей или сообществ по их идентификаторам.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р·Р°РїРёСЃРµР№ СЃРѕ СЃС‚РµРЅ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІ РїРѕ РёС… РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР°Рј.
 ; Syntax.........: _VK_wall_getById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_getById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.getById.xml", "")
+	$sResponse = _VK_SendRequest("wall.getById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_getById
@@ -385,23 +417,23 @@ EndFunc   ;==>_VK_wall_getById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_post()
-; Description ...: Публикует новую запись на своей или чужой стене.
+; Description ...: РџСѓР±Р»РёРєСѓРµС‚ РЅРѕРІСѓСЋ Р·Р°РїРёСЃСЊ РЅР° СЃРІРѕРµР№ РёР»Рё С‡СѓР¶РѕР№ СЃС‚РµРЅРµ.
 ; Syntax.........: _VK_wall_post()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_post()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.post.xml", "")
+	$sResponse = _VK_SendRequest("wall.post", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_post
@@ -410,23 +442,23 @@ EndFunc   ;==>_VK_wall_post
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_repost()
-; Description ...: Копирует объект на стену пользователя или сообщества.
+; Description ...: РљРѕРїРёСЂСѓРµС‚ РѕР±СЉРµРєС‚ РЅР° СЃС‚РµРЅСѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_wall_repost()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_repost()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.repost.xml", "")
+	$sResponse = _VK_SendRequest("wall.repost", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_repost
@@ -435,23 +467,23 @@ EndFunc   ;==>_VK_wall_repost
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_getReposts()
-; Description ...: Позволяет получать список репостов заданной записи.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР»СѓС‡Р°С‚СЊ СЃРїРёСЃРѕРє СЂРµРїРѕСЃС‚РѕРІ Р·Р°РґР°РЅРЅРѕР№ Р·Р°РїРёСЃРё.
 ; Syntax.........: _VK_wall_getReposts()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_getReposts()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.getReposts.xml", "")
+	$sResponse = _VK_SendRequest("wall.getReposts", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_getReposts
@@ -460,23 +492,23 @@ EndFunc   ;==>_VK_wall_getReposts
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_edit()
-; Description ...: Редактирует запись на стене.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ Р·Р°РїРёСЃСЊ РЅР° СЃС‚РµРЅРµ.
 ; Syntax.........: _VK_wall_edit()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_edit()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.edit.xml", "")
+	$sResponse = _VK_SendRequest("wall.edit", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_edit
@@ -485,23 +517,23 @@ EndFunc   ;==>_VK_wall_edit
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_delete()
-; Description ...: Удаляет запись со стены.
+; Description ...: РЈРґР°Р»СЏРµС‚ Р·Р°РїРёСЃСЊ СЃРѕ СЃС‚РµРЅС‹.
 ; Syntax.........: _VK_wall_delete()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_delete()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.delete.xml", "")
+	$sResponse = _VK_SendRequest("wall.delete", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_delete
@@ -510,23 +542,23 @@ EndFunc   ;==>_VK_wall_delete
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_restore()
-; Description ...: Восстанавливает удаленную запись на стене пользователя или сообщества.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СѓРґР°Р»РµРЅРЅСѓСЋ Р·Р°РїРёСЃСЊ РЅР° СЃС‚РµРЅРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_wall_restore()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_restore()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.restore.xml", "")
+	$sResponse = _VK_SendRequest("wall.restore", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_restore
@@ -535,23 +567,23 @@ EndFunc   ;==>_VK_wall_restore
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_pin()
-; Description ...: Закрепляет запись на стене (запись будет отображаться выше остальных).
+; Description ...: Р—Р°РєСЂРµРїР»СЏРµС‚ Р·Р°РїРёСЃСЊ РЅР° СЃС‚РµРЅРµ (Р·Р°РїРёСЃСЊ Р±СѓРґРµС‚ РѕС‚РѕР±СЂР°Р¶Р°С‚СЊСЃСЏ РІС‹С€Рµ РѕСЃС‚Р°Р»СЊРЅС‹С…).
 ; Syntax.........: _VK_wall_pin()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_pin()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.pin.xml", "")
+	$sResponse = _VK_SendRequest("wall.pin", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_pin
@@ -560,23 +592,23 @@ EndFunc   ;==>_VK_wall_pin
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_unpin()
-; Description ...: Отменяет закрепление записи на стене.
+; Description ...: РћС‚РјРµРЅСЏРµС‚ Р·Р°РєСЂРµРїР»РµРЅРёРµ Р·Р°РїРёСЃРё РЅР° СЃС‚РµРЅРµ.
 ; Syntax.........: _VK_wall_unpin()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_unpin()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.unpin.xml", "")
+	$sResponse = _VK_SendRequest("wall.unpin", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_unpin
@@ -585,24 +617,28 @@ EndFunc   ;==>_VK_wall_unpin
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_getComments()
-; Description ...: Возвращает список комментариев к записи на стене.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ Рє Р·Р°РїРёСЃРё РЅР° СЃС‚РµРЅРµ.
 ; Syntax.........: _VK_wall_getComments()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
-Func _VK_wall_getComments()
-	Local $sResponse, $asReturn
+Func _VK_wall_getComments($iOwnerID, $iPostID, $bNeedLikes = True, $iOffset = 0, $iCount = 10, $sSort = "asc", $iPrewiew_Lenght = 0, $bExtended = False)
+	Local $aResponse, $sResponseText, $bNeedToken
 
-	$sResponse = _VK_SendRequest("wall.getComments.xml", "")
+	$sResponseText = "owner_id=" & $iOwnerID & "&post_id=" & $iPostID & "&offset=" & $iOffset & "&count=" & $iCount & "&sort=" & $sSort
+	$sResponseText &=  "&need_likes=" & Int($bNeedLikes) & "&preview_length=" & $iPrewiew_Lenght  & "&extended=" & Int($bExtended)
+
+	$bNeedToken = ($_sAccessToken = "") ? False : True
+
+	$aResponse = _VK_SendRequest("wall.getComments", $sResponseText, $bNeedToken)
 
 	If @error Then Return SetError(@error, 0, $aResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-	Return $asReturn
+	Return $aResponse[2][1]
 
 EndFunc   ;==>_VK_wall_getComments
 
@@ -610,23 +646,23 @@ EndFunc   ;==>_VK_wall_getComments
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_addComment()
-; Description ...: Добавляет комментарий к записи на стене пользователя или сообщества.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє Р·Р°РїРёСЃРё РЅР° СЃС‚РµРЅРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_wall_addComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_addComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.addComment.xml", "")
+	$sResponse = _VK_SendRequest("wall.addComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_addComment
@@ -635,23 +671,23 @@ EndFunc   ;==>_VK_wall_addComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_editComment()
-; Description ...: Редактирует комментарий на стене пользователя или сообщества.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ РєРѕРјРјРµРЅС‚Р°СЂРёР№ РЅР° СЃС‚РµРЅРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_wall_editComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_editComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.editComment.xml", "")
+	$sResponse = _VK_SendRequest("wall.editComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_editComment
@@ -660,23 +696,23 @@ EndFunc   ;==>_VK_wall_editComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_deleteComment()
-; Description ...: Удаляет комментарий текущего пользователя к записи на своей или чужой стене.
+; Description ...: РЈРґР°Р»СЏРµС‚ РєРѕРјРјРµРЅС‚Р°СЂРёР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рє Р·Р°РїРёСЃРё РЅР° СЃРІРѕРµР№ РёР»Рё С‡СѓР¶РѕР№ СЃС‚РµРЅРµ.
 ; Syntax.........: _VK_wall_deleteComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_deleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.deleteComment.xml", "")
+	$sResponse = _VK_SendRequest("wall.deleteComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_walldeleteComment
@@ -685,23 +721,23 @@ EndFunc   ;==>_VK_walldeleteComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_restoreComment()
-; Description ...: Восстанавливает комментарий текущего пользователя к записи на своей или чужой стене.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РєРѕРјРјРµРЅС‚Р°СЂРёР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рє Р·Р°РїРёСЃРё РЅР° СЃРІРѕРµР№ РёР»Рё С‡СѓР¶РѕР№ СЃС‚РµРЅРµ.
 ; Syntax.........: _VK_wall_restoreComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_restoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.restoreComment.xml", "")
+	$sResponse = _VK_SendRequest("wall.restoreComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_restoreComment
@@ -710,23 +746,23 @@ EndFunc   ;==>_VK_wall_restoreComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_reportPost()
-; Description ...: Позволяет пожаловаться на запись.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР¶Р°Р»РѕРІР°С‚СЊСЃСЏ РЅР° Р·Р°РїРёСЃСЊ.
 ; Syntax.........: _VK_wall_reportPost()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_reportPost()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.reportPost.xml", "")
+	$sResponse = _VK_SendRequest("wall.reportPost", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_reportPost
@@ -735,50 +771,50 @@ EndFunc   ;==>_VK_wall_reportPost
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_wall_reportComment()
-; Description ...: Позволяет пожаловаться на комментарий к записи.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР¶Р°Р»РѕРІР°С‚СЊСЃСЏ РЅР° РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє Р·Р°РїРёСЃРё.
 ; Syntax.........: _VK_wall_reportComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_wall_reportComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("wall.reportComment.xml", "")
+	$sResponse = _VK_SendRequest("wall.reportComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_wall_reportComment
 
 #endregion Wall Functions
 
-#region Photos Functions
 
+#region Photos Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photoscreateAlbum()
-; Description ...: Создает пустой альбом для фотографий.
+; Description ...: РЎРѕР·РґР°РµС‚ РїСѓСЃС‚РѕР№ Р°Р»СЊР±РѕРј РґР»СЏ С„РѕС‚РѕРіСЂР°С„РёР№.
 ; Syntax.........: _VK_photoscreateAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photoscreateAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.createAlbum.xml", "")
+	$sResponse = _VK_SendRequest("photos.createAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photoscreateAlbum
@@ -787,23 +823,23 @@ EndFunc   ;==>_VK_photoscreateAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photoseditAlbum()
-; Description ...: Редактирует данные альбома для фотографий пользователя.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ РґР°РЅРЅС‹Рµ Р°Р»СЊР±РѕРјР° РґР»СЏ С„РѕС‚РѕРіСЂР°С„РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_photoseditAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photoseditAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.editAlbum.xml", "")
+	$sResponse = _VK_SendRequest("photos.editAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photoseditAlbum
@@ -812,23 +848,23 @@ EndFunc   ;==>_VK_photoseditAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetAlbums()
-; Description ...: Возвращает список альбомов пользователя или сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р°Р»СЊР±РѕРјРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_photosgetAlbums()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getAlbums.xml", "")
+	$sResponse = _VK_SendRequest("photos.getAlbums", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetAlbums
@@ -837,23 +873,23 @@ EndFunc   ;==>_VK_photosgetAlbums
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosget()
-; Description ...: Возвращает список фотографий в альбоме.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє С„РѕС‚РѕРіСЂР°С„РёР№ РІ Р°Р»СЊР±РѕРјРµ.
 ; Syntax.........: _VK_photosget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.get.xml", "")
+	$sResponse = _VK_SendRequest("photos.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosget
@@ -862,23 +898,23 @@ EndFunc   ;==>_VK_photosget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetAlbumsCount()
-; Description ...: Возвращает количество доступных альбомов пользователя или сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РґРѕСЃС‚СѓРїРЅС‹С… Р°Р»СЊР±РѕРјРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_photosgetAlbumsCount()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetAlbumsCount()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getAlbumsCount.xml", "")
+	$sResponse = _VK_SendRequest("photos.getAlbumsCount", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetAlbumsCount
@@ -887,23 +923,23 @@ EndFunc   ;==>_VK_photosgetAlbumsCount
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetById()
-; Description ...: Возвращает информацию о фотографиях по их идентификаторам.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С„РѕС‚РѕРіСЂР°С„РёСЏС… РїРѕ РёС… РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР°Рј.
 ; Syntax.........: _VK_photosgetById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getById.xml", "")
+	$sResponse = _VK_SendRequest("photos.getById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetById
@@ -912,23 +948,23 @@ EndFunc   ;==>_VK_photosgetById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetUploadServer()
-; Description ...: Возвращает адрес сервера для загрузки фотографий.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР° РґР»СЏ Р·Р°РіСЂСѓР·РєРё С„РѕС‚РѕРіСЂР°С„РёР№.
 ; Syntax.........: _VK_photosgetUploadServer()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getUploadServer.xml", "")
+	$sResponse = _VK_SendRequest("photos.getUploadServer", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetUploadServer
@@ -937,23 +973,23 @@ EndFunc   ;==>_VK_photosgetUploadServer
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetOwnerPhotoUploadServer()
-; Description ...: Возвращает адрес сервера для загрузки главной фотографии на страницу пользователя или сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР° РґР»СЏ Р·Р°РіСЂСѓР·РєРё РіР»Р°РІРЅРѕР№ С„РѕС‚РѕРіСЂР°С„РёРё РЅР° СЃС‚СЂР°РЅРёС†Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_photosgetOwnerPhotoUploadServer()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetOwnerPhotoUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getOwnerPhotoUploadServer.xml", "")
+	$sResponse = _VK_SendRequest("photos.getOwnerPhotoUploadServer", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetOwnerPhotoUploadServer
@@ -962,23 +998,23 @@ EndFunc   ;==>_VK_photosgetOwnerPhotoUploadServer
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetChatUploadServer()
-; Description ...: Позволяет получить адрес для загрузки фотографий мультидиалогов.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР»СѓС‡РёС‚СЊ Р°РґСЂРµСЃ РґР»СЏ Р·Р°РіСЂСѓР·РєРё С„РѕС‚РѕРіСЂР°С„РёР№ РјСѓР»СЊС‚РёРґРёР°Р»РѕРіРѕРІ.
 ; Syntax.........: _VK_photosgetChatUploadServer()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetChatUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getChatUploadServer.xml", "")
+	$sResponse = _VK_SendRequest("photos.getChatUploadServer", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetChatUploadServer
@@ -987,23 +1023,23 @@ EndFunc   ;==>_VK_photosgetChatUploadServer
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photossaveOwnerPhoto()
-; Description ...: Позволяет сохранить главную фотографию пользователя или сообщества.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЃРѕС…СЂР°РЅРёС‚СЊ РіР»Р°РІРЅСѓСЋ С„РѕС‚РѕРіСЂР°С„РёСЋ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_photossaveOwnerPhoto()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photossaveOwnerPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.saveOwnerPhoto.xml", "")
+	$sResponse = _VK_SendRequest("photos.saveOwnerPhoto", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photossaveOwnerPhoto
@@ -1012,23 +1048,23 @@ EndFunc   ;==>_VK_photossaveOwnerPhoto
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photossaveWallPhoto()
-; Description ...: Сохраняет фотографии после успешной загрузки на URI, полученный методом photos.getWallUploadServer.
+; Description ...: РЎРѕС…СЂР°РЅСЏРµС‚ С„РѕС‚РѕРіСЂР°С„РёРё РїРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕР№ Р·Р°РіСЂСѓР·РєРё РЅР° URI, РїРѕР»СѓС‡РµРЅРЅС‹Р№ РјРµС‚РѕРґРѕРј photos.getWallUploadServer.
 ; Syntax.........: _VK_photossaveWallPhoto()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photossaveWallPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.saveWallPhoto.xml", "")
+	$sResponse = _VK_SendRequest("photos.saveWallPhoto", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photossaveWallPhoto
@@ -1037,23 +1073,23 @@ EndFunc   ;==>_VK_photossaveWallPhoto
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetWallUploadServer()
-; Description ...: Возвращает адрес сервера для загрузки фотографии на стену пользователя или сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР° РґР»СЏ Р·Р°РіСЂСѓР·РєРё С„РѕС‚РѕРіСЂР°С„РёРё РЅР° СЃС‚РµРЅСѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_photosgetWallUploadServer()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetWallUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getWallUploadServer.xml", "")
+	$sResponse = _VK_SendRequest("photos.getWallUploadServer", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetWallUploadServer
@@ -1062,23 +1098,23 @@ EndFunc   ;==>_VK_photosgetWallUploadServer
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetMessagesUploadServer()
-; Description ...: Возвращает адрес сервера для загрузки фотографии в личное сообщение пользователю.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР° РґР»СЏ Р·Р°РіСЂСѓР·РєРё С„РѕС‚РѕРіСЂР°С„РёРё РІ Р»РёС‡РЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ.
 ; Syntax.........: _VK_photosgetMessagesUploadServer()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetMessagesUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getMessagesUploadServer.xml", "")
+	$sResponse = _VK_SendRequest("photos.getMessagesUploadServer", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetMessagesUploadServer
@@ -1087,23 +1123,23 @@ EndFunc   ;==>_VK_photosgetMessagesUploadServer
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photossaveMessagesPhoto()
-; Description ...: Сохраняет фотографию после успешной загрузки на URI, полученный методом photos.getMessagesUploadServer.
+; Description ...: РЎРѕС…СЂР°РЅСЏРµС‚ С„РѕС‚РѕРіСЂР°С„РёСЋ РїРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕР№ Р·Р°РіСЂСѓР·РєРё РЅР° URI, РїРѕР»СѓС‡РµРЅРЅС‹Р№ РјРµС‚РѕРґРѕРј photos.getMessagesUploadServer.
 ; Syntax.........: _VK_photossaveMessagesPhoto()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photossaveMessagesPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.saveMessagesPhoto.xml", "")
+	$sResponse = _VK_SendRequest("photos.saveMessagesPhoto", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photossaveMessagesPhoto
@@ -1112,23 +1148,23 @@ EndFunc   ;==>_VK_photossaveMessagesPhoto
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosreport()
-; Description ...: Позволяет пожаловаться на фотографию.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР¶Р°Р»РѕРІР°С‚СЊСЃСЏ РЅР° С„РѕС‚РѕРіСЂР°С„РёСЋ.
 ; Syntax.........: _VK_photosreport()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosreport()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.report.xml", "")
+	$sResponse = _VK_SendRequest("photos.report", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosreport
@@ -1137,23 +1173,23 @@ EndFunc   ;==>_VK_photosreport
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosreportComment()
-; Description ...: Позволяет пожаловаться на комментарий к фотографии.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР¶Р°Р»РѕРІР°С‚СЊСЃСЏ РЅР° РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photosreportComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosreportComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.reportComment.xml", "")
+	$sResponse = _VK_SendRequest("photos.reportComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosreportComment
@@ -1162,23 +1198,23 @@ EndFunc   ;==>_VK_photosreportComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photossearch()
-; Description ...: Осуществляет поиск изображений по местоположению или описанию.
+; Description ...: РћСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РїРѕРёСЃРє РёР·РѕР±СЂР°Р¶РµРЅРёР№ РїРѕ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёСЋ РёР»Рё РѕРїРёСЃР°РЅРёСЋ.
 ; Syntax.........: _VK_photossearch()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photossearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.search.xml", "")
+	$sResponse = _VK_SendRequest("photos.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photossearch
@@ -1187,23 +1223,23 @@ EndFunc   ;==>_VK_photossearch
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photossave()
-; Description ...: Сохраняет фотографии после успешной загрузки.
+; Description ...: РЎРѕС…СЂР°РЅСЏРµС‚ С„РѕС‚РѕРіСЂР°С„РёРё РїРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕР№ Р·Р°РіСЂСѓР·РєРё.
 ; Syntax.........: _VK_photossave()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photossave()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.save.xml", "")
+	$sResponse = _VK_SendRequest("photos.save", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photossave
@@ -1212,23 +1248,23 @@ EndFunc   ;==>_VK_photossave
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photoscopy()
-; Description ...: Позволяет скопировать фотографию в альбом "Сохраненные фотографии"
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЃРєРѕРїРёСЂРѕРІР°С‚СЊ С„РѕС‚РѕРіСЂР°С„РёСЋ РІ Р°Р»СЊР±РѕРј "РЎРѕС…СЂР°РЅРµРЅРЅС‹Рµ С„РѕС‚РѕРіСЂР°С„РёРё"
 ; Syntax.........: _VK_photoscopy()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photoscopy()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.copy.xml", "")
+	$sResponse = _VK_SendRequest("photos.copy", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photoscopy
@@ -1237,23 +1273,23 @@ EndFunc   ;==>_VK_photoscopy
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosedit()
-; Description ...: Изменяет описание у выбранной фотографии.
+; Description ...: РР·РјРµРЅСЏРµС‚ РѕРїРёСЃР°РЅРёРµ Сѓ РІС‹Р±СЂР°РЅРЅРѕР№ С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photosedit()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.edit.xml", "")
+	$sResponse = _VK_SendRequest("photos.edit", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosedit
@@ -1262,23 +1298,23 @@ EndFunc   ;==>_VK_photosedit
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosmove()
-; Description ...: Переносит фотографию из одного альбома в другой.
+; Description ...: РџРµСЂРµРЅРѕСЃРёС‚ С„РѕС‚РѕРіСЂР°С„РёСЋ РёР· РѕРґРЅРѕРіРѕ Р°Р»СЊР±РѕРјР° РІ РґСЂСѓРіРѕР№.
 ; Syntax.........: _VK_photosmove()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosmove()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.move.xml", "")
+	$sResponse = _VK_SendRequest("photos.move", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosmove
@@ -1287,23 +1323,23 @@ EndFunc   ;==>_VK_photosmove
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosmakeCover()
-; Description ...: Делает фотографию обложкой альбома.
+; Description ...: Р”РµР»Р°РµС‚ С„РѕС‚РѕРіСЂР°С„РёСЋ РѕР±Р»РѕР¶РєРѕР№ Р°Р»СЊР±РѕРјР°.
 ; Syntax.........: _VK_photosmakeCover()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosmakeCover()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.makeCover.xml", "")
+	$sResponse = _VK_SendRequest("photos.makeCover", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosmakeCover
@@ -1312,23 +1348,23 @@ EndFunc   ;==>_VK_photosmakeCover
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosreorderAlbums()
-; Description ...: Меняет порядок альбома в списке альбомов пользователя.
+; Description ...: РњРµРЅСЏРµС‚ РїРѕСЂСЏРґРѕРє Р°Р»СЊР±РѕРјР° РІ СЃРїРёСЃРєРµ Р°Р»СЊР±РѕРјРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_photosreorderAlbums()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosreorderAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.reorderAlbums.xml", "")
+	$sResponse = _VK_SendRequest("photos.reorderAlbums", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosreorderAlbums
@@ -1337,23 +1373,23 @@ EndFunc   ;==>_VK_photosreorderAlbums
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosreorderPhotos()
-; Description ...: Меняет порядок фотографии в списке фотографий альбома пользователя.
+; Description ...: РњРµРЅСЏРµС‚ РїРѕСЂСЏРґРѕРє С„РѕС‚РѕРіСЂР°С„РёРё РІ СЃРїРёСЃРєРµ С„РѕС‚РѕРіСЂР°С„РёР№ Р°Р»СЊР±РѕРјР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_photosreorderPhotos()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosreorderPhotos()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.reorderPhotos.xml", "")
+	$sResponse = _VK_SendRequest("photos.reorderPhotos", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosreorderPhotos
@@ -1362,23 +1398,23 @@ EndFunc   ;==>_VK_photosreorderPhotos
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetAll()
-; Description ...: Возвращает все фотографии пользователя или сообщества в антихронологическом порядке.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РІСЃРµ С„РѕС‚РѕРіСЂР°С„РёРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР° РІ Р°РЅС‚РёС…СЂРѕРЅРѕР»РѕРіРёС‡РµСЃРєРѕРј РїРѕСЂСЏРґРєРµ.
 ; Syntax.........: _VK_photosgetAll()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetAll()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getAll.xml", "")
+	$sResponse = _VK_SendRequest("photos.getAll", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetAll
@@ -1387,23 +1423,23 @@ EndFunc   ;==>_VK_photosgetAll
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetUserPhotos()
-; Description ...: Возвращает список фотографий, на которых отмечен пользователь
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє С„РѕС‚РѕРіСЂР°С„РёР№, РЅР° РєРѕС‚РѕСЂС‹С… РѕС‚РјРµС‡РµРЅ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ
 ; Syntax.........: _VK_photosgetUserPhotos()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetUserPhotos()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getUserPhotos.xml", "")
+	$sResponse = _VK_SendRequest("photos.getUserPhotos", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetUserPhotos
@@ -1412,23 +1448,23 @@ EndFunc   ;==>_VK_photosgetUserPhotos
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosdeleteAlbum()
-; Description ...: Удаляет указанный альбом для фотографий у текущего пользователя
+; Description ...: РЈРґР°Р»СЏРµС‚ СѓРєР°Р·Р°РЅРЅС‹Р№ Р°Р»СЊР±РѕРј РґР»СЏ С„РѕС‚РѕРіСЂР°С„РёР№ Сѓ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
 ; Syntax.........: _VK_photosdeleteAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosdeleteAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.deleteAlbum.xml", "")
+	$sResponse = _VK_SendRequest("photos.deleteAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosdeleteAlbum
@@ -1437,23 +1473,23 @@ EndFunc   ;==>_VK_photosdeleteAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosdelete()
-; Description ...: Удаление фотографии на сайте.
+; Description ...: РЈРґР°Р»РµРЅРёРµ С„РѕС‚РѕРіСЂР°С„РёРё РЅР° СЃР°Р№С‚Рµ.
 ; Syntax.........: _VK_photosdelete()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.delete.xml", "")
+	$sResponse = _VK_SendRequest("photos.delete", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosdelete
@@ -1462,23 +1498,23 @@ EndFunc   ;==>_VK_photosdelete
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosrestore()
-; Description ...: Восстанавливает удаленную фотографию.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СѓРґР°Р»РµРЅРЅСѓСЋ С„РѕС‚РѕРіСЂР°С„РёСЋ.
 ; Syntax.........: _VK_photosrestore()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosrestore()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.restore.xml", "")
+	$sResponse = _VK_SendRequest("photos.restore", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosrestore
@@ -1487,23 +1523,23 @@ EndFunc   ;==>_VK_photosrestore
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosconfirmTag()
-; Description ...: Подтверждает отметку на фотографии.
+; Description ...: РџРѕРґС‚РІРµСЂР¶РґР°РµС‚ РѕС‚РјРµС‚РєСѓ РЅР° С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photosconfirmTag()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosconfirmTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.confirmTag.xml", "")
+	$sResponse = _VK_SendRequest("photos.confirmTag", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosconfirmTag
@@ -1512,23 +1548,23 @@ EndFunc   ;==>_VK_photosconfirmTag
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetComments()
-; Description ...: Возвращает список комментариев к фотографии.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ Рє С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photosgetComments()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getComments.xml", "")
+	$sResponse = _VK_SendRequest("photos.getComments", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetComments
@@ -1537,23 +1573,23 @@ EndFunc   ;==>_VK_photosgetComments
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetAllComments()
-; Description ...: Возвращает отсортированный в антихронологическом порядке список всех комментариев к конкретному альбому или ко всем альбомам пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РѕС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅРЅС‹Р№ РІ Р°РЅС‚РёС…СЂРѕРЅРѕР»РѕРіРёС‡РµСЃРєРѕРј РїРѕСЂСЏРґРєРµ СЃРїРёСЃРѕРє РІСЃРµС… РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ Рє РєРѕРЅРєСЂРµС‚РЅРѕРјСѓ Р°Р»СЊР±РѕРјСѓ РёР»Рё РєРѕ РІСЃРµРј Р°Р»СЊР±РѕРјР°Рј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_photosgetAllComments()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetAllComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getAllComments.xml", "")
+	$sResponse = _VK_SendRequest("photos.getAllComments", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetAllComments
@@ -1562,23 +1598,23 @@ EndFunc   ;==>_VK_photosgetAllComments
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photoscreateComment()
-; Description ...: Создает новый комментарий к фотографии.
+; Description ...: РЎРѕР·РґР°РµС‚ РЅРѕРІС‹Р№ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photoscreateComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photoscreateComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.createComment.xml", "")
+	$sResponse = _VK_SendRequest("photos.createComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photoscreateComment
@@ -1587,23 +1623,23 @@ EndFunc   ;==>_VK_photoscreateComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosdeleteComment()
-; Description ...: Удаляет комментарий к фотографии.
+; Description ...: РЈРґР°Р»СЏРµС‚ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photosdeleteComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosdeleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.deleteComment.xml", "")
+	$sResponse = _VK_SendRequest("photos.deleteComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosdeleteComment
@@ -1612,23 +1648,23 @@ EndFunc   ;==>_VK_photosdeleteComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosrestoreComment()
-; Description ...: Восстанавливает удаленный комментарий к фотографии.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СѓРґР°Р»РµРЅРЅС‹Р№ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photosrestoreComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosrestoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.restoreComment.xml", "")
+	$sResponse = _VK_SendRequest("photos.restoreComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosrestoreComment
@@ -1637,23 +1673,23 @@ EndFunc   ;==>_VK_photosrestoreComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photoseditComment()
-; Description ...: Изменяет текст комментария к фотографии.
+; Description ...: РР·РјРµРЅСЏРµС‚ С‚РµРєСЃС‚ РєРѕРјРјРµРЅС‚Р°СЂРёСЏ Рє С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photoseditComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photoseditComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.editComment.xml", "")
+	$sResponse = _VK_SendRequest("photos.editComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photoseditComment
@@ -1662,23 +1698,23 @@ EndFunc   ;==>_VK_photoseditComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetTags()
-; Description ...: Возвращает список отметок на фотографии.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РѕС‚РјРµС‚РѕРє РЅР° С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photosgetTags()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetTags()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getTags.xml", "")
+	$sResponse = _VK_SendRequest("photos.getTags", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetTags
@@ -1687,23 +1723,23 @@ EndFunc   ;==>_VK_photosgetTags
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosputTag()
-; Description ...: Добавляет отметку на фотографию.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РѕС‚РјРµС‚РєСѓ РЅР° С„РѕС‚РѕРіСЂР°С„РёСЋ.
 ; Syntax.........: _VK_photosputTag()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosputTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.putTag.xml", "")
+	$sResponse = _VK_SendRequest("photos.putTag", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosputTag
@@ -1712,23 +1748,23 @@ EndFunc   ;==>_VK_photosputTag
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosremoveTag()
-; Description ...: Удаляет отметку с фотографии.
+; Description ...: РЈРґР°Р»СЏРµС‚ РѕС‚РјРµС‚РєСѓ СЃ С„РѕС‚РѕРіСЂР°С„РёРё.
 ; Syntax.........: _VK_photosremoveTag()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosremoveTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.removeTag.xml", "")
+	$sResponse = _VK_SendRequest("photos.removeTag", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosremoveTag
@@ -1737,50 +1773,50 @@ EndFunc   ;==>_VK_photosremoveTag
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_photosgetNewTags()
-; Description ...: Возвращает список фотографий, на которых есть непросмотренные отметки.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє С„РѕС‚РѕРіСЂР°С„РёР№, РЅР° РєРѕС‚РѕСЂС‹С… РµСЃС‚СЊ РЅРµРїСЂРѕСЃРјРѕС‚СЂРµРЅРЅС‹Рµ РѕС‚РјРµС‚РєРё.
 ; Syntax.........: _VK_photosgetNewTags()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_photosgetNewTags()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("photos.getNewTags.xml", "")
+	$sResponse = _VK_SendRequest("photos.getNewTags", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_photosgetNewTags
 
 #endregion Photos Functions
 
-#region Friends Functions
 
+#region Friends Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsget()
-; Description ...: Возвращает список идентификаторов друзей пользователя или расширенную информацию о друзьях пользователя (при использовании параметра <b>fields</b>).
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РґСЂСѓР·РµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЂР°СЃС€РёСЂРµРЅРЅСѓСЋ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РґСЂСѓР·СЊСЏС… РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ (РїСЂРё РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё РїР°СЂР°РјРµС‚СЂР° <b>fields</b>).
 ; Syntax.........: _VK_friendsget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.get.xml", "")
+	$sResponse = _VK_SendRequest("friends.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsget
@@ -1789,23 +1825,23 @@ EndFunc   ;==>_VK_friendsget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsgetOnline()
-; Description ...: Возвращает список идентификаторов друзей пользователя, находящихся на сайте.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РґСЂСѓР·РµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ, РЅР°С…РѕРґСЏС‰РёС…СЃСЏ РЅР° СЃР°Р№С‚Рµ.
 ; Syntax.........: _VK_friendsgetOnline()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsgetOnline()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.getOnline.xml", "")
+	$sResponse = _VK_SendRequest("friends.getOnline", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsgetOnline
@@ -1814,23 +1850,23 @@ EndFunc   ;==>_VK_friendsgetOnline
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsgetMutual()
-; Description ...: Возвращает список идентификаторов общих друзей между парой пользователей.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РѕР±С‰РёС… РґСЂСѓР·РµР№ РјРµР¶РґСѓ РїР°СЂРѕР№ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.
 ; Syntax.........: _VK_friendsgetMutual()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsgetMutual()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.getMutual.xml", "")
+	$sResponse = _VK_SendRequest("friends.getMutual", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsgetMutual
@@ -1839,23 +1875,23 @@ EndFunc   ;==>_VK_friendsgetMutual
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsgetRecent()
-; Description ...: Возвращает список идентификаторов недавно добавленных друзей текущего пользователя
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РЅРµРґР°РІРЅРѕ РґРѕР±Р°РІР»РµРЅРЅС‹С… РґСЂСѓР·РµР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
 ; Syntax.........: _VK_friendsgetRecent()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsgetRecent()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.getRecent.xml", "")
+	$sResponse = _VK_SendRequest("friends.getRecent", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsgetRecent
@@ -1864,23 +1900,23 @@ EndFunc   ;==>_VK_friendsgetRecent
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsgetRequests()
-; Description ...: Возвращает информацию о полученных или отправленных заявках на добавление в друзья для текущего пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РїРѕР»СѓС‡РµРЅРЅС‹С… РёР»Рё РѕС‚РїСЂР°РІР»РµРЅРЅС‹С… Р·Р°СЏРІРєР°С… РЅР° РґРѕР±Р°РІР»РµРЅРёРµ РІ РґСЂСѓР·СЊСЏ РґР»СЏ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_friendsgetRequests()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsgetRequests()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.getRequests.xml", "")
+	$sResponse = _VK_SendRequest("friends.getRequests", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsgetRequests
@@ -1889,23 +1925,23 @@ EndFunc   ;==>_VK_friendsgetRequests
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsadd()
-; Description ...: Одобряет или создает заявку на добавление в друзья.
+; Description ...: РћРґРѕР±СЂСЏРµС‚ РёР»Рё СЃРѕР·РґР°РµС‚ Р·Р°СЏРІРєСѓ РЅР° РґРѕР±Р°РІР»РµРЅРёРµ РІ РґСЂСѓР·СЊСЏ.
 ; Syntax.........: _VK_friendsadd()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.add.xml", "")
+	$sResponse = _VK_SendRequest("friends.add", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsadd
@@ -1914,23 +1950,23 @@ EndFunc   ;==>_VK_friendsadd
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsedit()
-; Description ...: Редактирует списки друзей для выбранного друга.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ СЃРїРёСЃРєРё РґСЂСѓР·РµР№ РґР»СЏ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РґСЂСѓРіР°.
 ; Syntax.........: _VK_friendsedit()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.edit.xml", "")
+	$sResponse = _VK_SendRequest("friends.edit", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsedit
@@ -1939,23 +1975,23 @@ EndFunc   ;==>_VK_friendsedit
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsdelete()
-; Description ...: Удаляет пользователя из списка друзей или отклоняет заявку в друзья.
+; Description ...: РЈРґР°Р»СЏРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· СЃРїРёСЃРєР° РґСЂСѓР·РµР№ РёР»Рё РѕС‚РєР»РѕРЅСЏРµС‚ Р·Р°СЏРІРєСѓ РІ РґСЂСѓР·СЊСЏ.
 ; Syntax.........: _VK_friendsdelete()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.delete.xml", "")
+	$sResponse = _VK_SendRequest("friends.delete", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsdelete
@@ -1964,23 +2000,23 @@ EndFunc   ;==>_VK_friendsdelete
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsgetLists()
-; Description ...: Возвращает список меток друзей текущего пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РјРµС‚РѕРє РґСЂСѓР·РµР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_friendsgetLists()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsgetLists()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.getLists.xml", "")
+	$sResponse = _VK_SendRequest("friends.getLists", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsgetLists
@@ -1989,23 +2025,23 @@ EndFunc   ;==>_VK_friendsgetLists
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsaddList()
-; Description ...: Создает новый список друзей у текущего пользователя.
+; Description ...: РЎРѕР·РґР°РµС‚ РЅРѕРІС‹Р№ СЃРїРёСЃРѕРє РґСЂСѓР·РµР№ Сѓ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_friendsaddList()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsaddList()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.addList.xml", "")
+	$sResponse = _VK_SendRequest("friends.addList", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsaddList
@@ -2014,23 +2050,23 @@ EndFunc   ;==>_VK_friendsaddList
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendseditList()
-; Description ...: Редактирует существующий список друзей текущего пользователя.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ СЃРїРёСЃРѕРє РґСЂСѓР·РµР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_friendseditList()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendseditList()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.editList.xml", "")
+	$sResponse = _VK_SendRequest("friends.editList", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendseditList
@@ -2039,23 +2075,23 @@ EndFunc   ;==>_VK_friendseditList
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsdeleteList()
-; Description ...: Удаляет существующий список друзей текущего пользователя.
+; Description ...: РЈРґР°Р»СЏРµС‚ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ СЃРїРёСЃРѕРє РґСЂСѓР·РµР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_friendsdeleteList()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsdeleteList()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.deleteList.xml", "")
+	$sResponse = _VK_SendRequest("friends.deleteList", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsdeleteList
@@ -2064,23 +2100,23 @@ EndFunc   ;==>_VK_friendsdeleteList
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsgetAppUsers()
-; Description ...: Возвращает список идентификаторов друзей текущего пользователя, которые установили данное приложение.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РґСЂСѓР·РµР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ, РєРѕС‚РѕСЂС‹Рµ СѓСЃС‚Р°РЅРѕРІРёР»Рё РґР°РЅРЅРѕРµ РїСЂРёР»РѕР¶РµРЅРёРµ.
 ; Syntax.........: _VK_friendsgetAppUsers()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsgetAppUsers()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.getAppUsers.xml", "")
+	$sResponse = _VK_SendRequest("friends.getAppUsers", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsgetAppUsers
@@ -2089,23 +2125,23 @@ EndFunc   ;==>_VK_friendsgetAppUsers
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsgetByPhones()
-; Description ...: Возвращает список друзей пользователя, у которых завалидированные или указанные в профиле телефонные номера входят в заданный список.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РґСЂСѓР·РµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ, Сѓ РєРѕС‚РѕСЂС‹С… Р·Р°РІР°Р»РёРґРёСЂРѕРІР°РЅРЅС‹Рµ РёР»Рё СѓРєР°Р·Р°РЅРЅС‹Рµ РІ РїСЂРѕС„РёР»Рµ С‚РµР»РµС„РѕРЅРЅС‹Рµ РЅРѕРјРµСЂР° РІС…РѕРґСЏС‚ РІ Р·Р°РґР°РЅРЅС‹Р№ СЃРїРёСЃРѕРє.
 ; Syntax.........: _VK_friendsgetByPhones()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsgetByPhones()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.getByPhones.xml", "")
+	$sResponse = _VK_SendRequest("friends.getByPhones", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsgetByPhones
@@ -2114,23 +2150,23 @@ EndFunc   ;==>_VK_friendsgetByPhones
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsdeleteAllRequests()
-; Description ...: Отмечает все входящие заявки на добавление в друзья как просмотренные.
+; Description ...: РћС‚РјРµС‡Р°РµС‚ РІСЃРµ РІС…РѕРґСЏС‰РёРµ Р·Р°СЏРІРєРё РЅР° РґРѕР±Р°РІР»РµРЅРёРµ РІ РґСЂСѓР·СЊСЏ РєР°Рє РїСЂРѕСЃРјРѕС‚СЂРµРЅРЅС‹Рµ.
 ; Syntax.........: _VK_friendsdeleteAllRequests()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsdeleteAllRequests()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.deleteAllRequests.xml", "")
+	$sResponse = _VK_SendRequest("friends.deleteAllRequests", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsdeleteAllRequests
@@ -2139,23 +2175,23 @@ EndFunc   ;==>_VK_friendsdeleteAllRequests
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsgetSuggestions()
-; Description ...: Возвращает список профилей пользователей, которые могут быть друзьями текущего пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїСЂРѕС„РёР»РµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РєРѕС‚РѕСЂС‹Рµ РјРѕРіСѓС‚ Р±С‹С‚СЊ РґСЂСѓР·СЊСЏРјРё С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_friendsgetSuggestions()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsgetSuggestions()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.getSuggestions.xml", "")
+	$sResponse = _VK_SendRequest("friends.getSuggestions", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsgetSuggestions
@@ -2164,23 +2200,23 @@ EndFunc   ;==>_VK_friendsgetSuggestions
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsareFriends()
-; Description ...: Возвращает информацию о том, добавлен ли текущий пользователь в друзья у указанных пользователей.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, РґРѕР±Р°РІР»РµРЅ Р»Рё С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІ РґСЂСѓР·СЊСЏ Сѓ СѓРєР°Р·Р°РЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.
 ; Syntax.........: _VK_friendsareFriends()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsareFriends()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.areFriends.xml", "")
+	$sResponse = _VK_SendRequest("friends.areFriends", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsareFriends
@@ -2189,76 +2225,74 @@ EndFunc   ;==>_VK_friendsareFriends
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendsgetAvailableForCall()
-; Description ...: Позволяет получить список идентификаторов пользователей, доступных для вызова в приложении, используя метод JSAPI <b>callUser</b>. <br><br>
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РґРѕСЃС‚СѓРїРЅС‹С… РґР»СЏ РІС‹Р·РѕРІР° РІ РїСЂРёР»РѕР¶РµРЅРёРё, РёСЃРїРѕР»СЊР·СѓСЏ РјРµС‚РѕРґ JSAPI <b>callUser</b>. <br><br>
 ; Syntax.........: _VK_friendsgetAvailableForCall()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendsgetAvailableForCall()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.getAvailableForCall.xml", "")
+	$sResponse = _VK_SendRequest("friends.getAvailableForCall", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendsgetAvailableForCall
 
 
-Подробнее о схеме вызова из приложений.
-
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_friendssearch()
-; Description ...: Позволяет искать по списку друзей пользователей.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РёСЃРєР°С‚СЊ РїРѕ СЃРїРёСЃРєСѓ РґСЂСѓР·РµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№.
 ; Syntax.........: _VK_friendssearch()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_friendssearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("friends.search.xml", "")
+	$sResponse = _VK_SendRequest("friends.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_friendssearch
 
 #endregion Friends Functions
 
-#region Widget Functions
 
+#region Widget Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_widgetsgetComments()
-; Description ...: Получает список комментариев к странице, оставленных через Виджет комментариев.
+; Description ...: РџРѕР»СѓС‡Р°РµС‚ СЃРїРёСЃРѕРє РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ Рє СЃС‚СЂР°РЅРёС†Рµ, РѕСЃС‚Р°РІР»РµРЅРЅС‹С… С‡РµСЂРµР· Р’РёРґР¶РµС‚ РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ.
 ; Syntax.........: _VK_widgetsgetComments()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_widgetsgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("widgets.getComments.xml", "")
+	$sResponse = _VK_SendRequest("widgets.getComments", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_widgetsgetComments
@@ -2267,50 +2301,50 @@ EndFunc   ;==>_VK_widgetsgetComments
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_widgetsgetPages()
-; Description ...: Получает список страниц приложения/сайта, на которых установлен Виджет комментариев или «Мне нравится».
+; Description ...: РџРѕР»СѓС‡Р°РµС‚ СЃРїРёСЃРѕРє СЃС‚СЂР°РЅРёС† РїСЂРёР»РѕР¶РµРЅРёСЏ/СЃР°Р№С‚Р°, РЅР° РєРѕС‚РѕСЂС‹С… СѓСЃС‚Р°РЅРѕРІР»РµРЅ Р’РёРґР¶РµС‚ РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ РёР»Рё В«РњРЅРµ РЅСЂР°РІРёС‚СЃСЏВ».
 ; Syntax.........: _VK_widgetsgetPages()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_widgetsgetPages()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("widgets.getPages.xml", "")
+	$sResponse = _VK_SendRequest("widgets.getPages", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_widgetsgetPages
 
 #endregion Widget Functions
 
-#region Storage Functions
 
+#region Storage Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_storageget()
-; Description ...: Возвращает значение переменной, название которой передано в параметре <b>key</b>.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№, РЅР°Р·РІР°РЅРёРµ РєРѕС‚РѕСЂРѕР№ РїРµСЂРµРґР°РЅРѕ РІ РїР°СЂР°РјРµС‚СЂРµ <b>key</b>.
 ; Syntax.........: _VK_storageget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_storageget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("storage.get.xml", "")
+	$sResponse = _VK_SendRequest("storage.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_storageget
@@ -2319,23 +2353,23 @@ EndFunc   ;==>_VK_storageget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_storageset()
-; Description ...: Сохраняет значение переменной, название которой передано в параметре <b>key</b>.
+; Description ...: РЎРѕС…СЂР°РЅСЏРµС‚ Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№, РЅР°Р·РІР°РЅРёРµ РєРѕС‚РѕСЂРѕР№ РїРµСЂРµРґР°РЅРѕ РІ РїР°СЂР°РјРµС‚СЂРµ <b>key</b>.
 ; Syntax.........: _VK_storageset()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_storageset()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("storage.set.xml", "")
+	$sResponse = _VK_SendRequest("storage.set", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_storageset
@@ -2344,77 +2378,73 @@ EndFunc   ;==>_VK_storageset
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_storagegetKeys()
-; Description ...: Возвращает названия всех переменных.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РЅР°Р·РІР°РЅРёСЏ РІСЃРµС… РїРµСЂРµРјРµРЅРЅС‹С….
 ; Syntax.........: _VK_storagegetKeys()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_storagegetKeys()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("storage.getKeys.xml", "")
+	$sResponse = _VK_SendRequest("storage.getKeys", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_storagegetKeys
 
 #endregion Storage Functions
 
-#region Status Functions
 
+#region Status Functions
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_statusget()
-; Description ...: Получает статус пользователя.
+; Description ...: РџРѕР»СѓС‡Р°РµС‚ СЃС‚Р°С‚СѓСЃ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_statusGet($_sUID = "", $_bGID = False)
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;                  $_sUID - UID пользователя или GID группы у которого(й) требуется получить статус. По умолчанию - текущий пользователь
-;				   $_bGID - установить True если необходимо получить статус группы.
-; Return values .: Успех - Строка со статусом и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = Код ошибки с сайта
-;				   @error = 20000 присваивается в случае если не было задано ID группу у которой необходимо получить статус.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
+;                  $_sUID - UID РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё GID РіСЂСѓРїРїС‹ Сѓ РєРѕС‚РѕСЂРѕРіРѕ(Р№) С‚СЂРµР±СѓРµС‚СЃСЏ РїРѕР»СѓС‡РёС‚СЊ СЃС‚Р°С‚СѓСЃ. РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ - С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ
+;				   $_bGID - СѓСЃС‚Р°РЅРѕРІРёС‚СЊ True РµСЃР»Рё РЅРµРѕР±С…РѕРґРёРјРѕ РїРѕР»СѓС‡РёС‚СЊ СЃС‚Р°С‚СѓСЃ РіСЂСѓРїРїС‹.
+; Return values .: РЈСЃРїРµС… - РЎС‚СЂРѕРєР° СЃРѕ СЃС‚Р°С‚СѓСЃРѕРј Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃ СЃР°Р№С‚Р°
+;				   @error = 20000 РїСЂРёСЃРІР°РёРІР°РµС‚СЃСЏ РІ СЃР»СѓС‡Р°Рµ РµСЃР»Рё РЅРµ Р±С‹Р»Рѕ Р·Р°РґР°РЅРѕ ID РіСЂСѓРїРїСѓ Сѓ РєРѕС‚РѕСЂРѕР№ РЅРµРѕР±С…РѕРґРёРјРѕ РїРѕР»СѓС‡РёС‚СЊ СЃС‚Р°С‚СѓСЃ.
 ; Author ........: Fever, Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей status.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ status.
 ; ============================================================================================================
 Func _VK_statusGet($_sUID = "", $_bGID = False)
-	Local $sResponse, $sStatus
-
-	$sResponse = _VK_SendRequest("status.get.xml", "")
+	Local $aResponse, $sStatus, $aResponse
 
 	If Not $_bGID Then
-		$sResponse = _VK_SendRequest("status.get.xml","user_id=" & $_sUID)
+		$aResponse = _VK_SendRequest("status.get","user_id=" & $_sUID)
 	Else
 		If $_sUID = "" Then Return SetError(20000, 0, "Error: Group ID is empty!")
-
-		$sResponse = _VK_SendRequest("status.get.xml","group_id=" & $_sUID)
+		$aResponse = _VK_SendRequest("status.get","group_id=" & $_sUID)
 	EndIf
 
 	If @error Then Return SetError(@error, 0, $aResponse)
 
-	$sStatus = _CreateArray($sResponse, "text")
+	If IsArray($aResponse) Then Return $aResponse[1][1]
 
-	Return $sStatus[0]
-
+	Return ""
 EndFunc   ;==>_VK_statusget
 
 
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_statusSet()
-; Description ...: Устанавливает новый статус текущему пользователю или сообществу.
+; Description ...: РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РЅРѕРІС‹Р№ СЃС‚Р°С‚СѓСЃ С‚РµРєСѓС‰РµРјСѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІСѓ.
 ; Syntax.........: _VK_statusSet($_sText = "")
-; Parameters ....: $_sText - текст статуса, который необходимо установить.  По умолчанию - очищение статуса
-;                  $_sGID - ID группы для которой необходимо установить статус. По умолчанию - текущий пользователь
-; Return values .: Успех - 1 и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = Код ошибки с сайта
+; Parameters ....: $_sText - С‚РµРєСЃС‚ СЃС‚Р°С‚СѓСЃР°, РєРѕС‚РѕСЂС‹Р№ РЅРµРѕР±С…РѕРґРёРјРѕ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ.  РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ - РѕС‡РёС‰РµРЅРёРµ СЃС‚Р°С‚СѓСЃР°
+;                  $_sGID - ID РіСЂСѓРїРїС‹ РґР»СЏ РєРѕС‚РѕСЂРѕР№ РЅРµРѕР±С…РѕРґРёРјРѕ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ СЃС‚Р°С‚СѓСЃ. РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ - С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ
+; Return values .: РЈСЃРїРµС… - 1 Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃ СЃР°Р№С‚Р°
 ; Author ........: Fever, Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей status.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ status.
 ; ============================================================================================================
 Func _VK_statusSet($_sText = "", $_sGID = "")
 	Local $sStatus, $sResponse
@@ -2422,63 +2452,71 @@ Func _VK_statusSet($_sText = "", $_sGID = "")
 	$_sText = _Encoding_URIEncode($_sText)
 	If $_sGID Then $_sText &= "&group_id=" & $_sGID
 
-	$sResponse = _VK_SendRequest("status.set.xml", "text=" & $_sText)
+	$sResponse = _VK_SendRequest("status.set", "text=" & $_sText)
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$sStatus = _CreateArray($sResponse, "response")
-	Return $sStatus[0]
-
+	Return $sResponse
 EndFunc   ;==>_VK_statusset
-
 #endregion Status Functions
 
+
 #region Audio Functions
-
 ; #FUNCTION# =================================================================================================
-; Name...........:  _VK_audioGet()
-; Description ...: Возвращает список аудиозаписей пользователя или сообщества.
-; Syntax.........: _VK_audioGet()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
-;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Name...........:  _VK_audio_Get()
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р°СѓРґРёРѕР·Р°РїРёСЃРµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
+; Syntax.........: _VK_audio_Get($iOwnerID, $iAlbumID, $sAudioIDs, $iNeed_User, $iCount, $iOffset)
+; Parameters ....: $iOwnerID - РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РІР»Р°РґРµР»СЊС†Р° Р°СѓРґРёРѕР·Р°РїРёСЃРµР№ (РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІРѕ). Р¦РµР»РѕРµ С‡РёСЃР»Рѕ, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+;                  $iAlbumID - РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ Р°Р»СЊР±РѕРјР° СЃ Р°СѓРґРёРѕР·Р°РїРёСЃСЏРјРё. Р¦РµР»РѕРµ С‡РёСЃР»Рѕ
+;                  $sAudioIDs - РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ Р°СѓРґРёРѕР·Р°РїРёСЃРµР№, РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РєРѕС‚РѕСЂС‹С… РЅРµРѕР±С…РѕРґРёРјРѕ РІРµСЂРЅСѓС‚СЊ. РЎРїРёСЃРѕРє РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹С… С‡РёСЃРµР», СЂР°Р·РґРµР»РµРЅРЅС‹С… Р·Р°РїСЏС‚С‹РјРё
+;				   $iNeed_User - 1 вЂ” РІРѕР·РІСЂР°С‰Р°С‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏС…, Р·Р°РіСЂСѓР·РёРІС€РёС… Р°СѓРґРёРѕР·Р°РїРёСЃСЊ. Р¤Р»Р°Рі, РјРѕР¶РµС‚ РїСЂРёРЅРёРјР°С‚СЊ Р·РЅР°С‡РµРЅРёСЏ 1 РёР»Рё 0
+;                  $iCount - РєРѕР»РёС‡РµСЃС‚РІРѕ Р°СѓРґРёРѕР·Р°РїРёСЃРµР№, РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РєРѕС‚РѕСЂС‹С… РЅРµРѕР±С…РѕРґРёРјРѕ РІРµСЂРЅСѓС‚СЊ. РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ вЂ” 6000. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ
+;                  $iOffset - СЃРјРµС‰РµРЅРёРµ, РЅРµРѕР±С…РѕРґРёРјРѕРµ РґР»СЏ РІС‹Р±РѕСЂРєРё РѕРїСЂРµРґРµР»РµРЅРЅРѕРіРѕ РєРѕР»РёС‡РµСЃС‚РІР° Р°СѓРґРёРѕР·Р°РїРёСЃРµР№. РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ вЂ” 0. РџРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ
+; Return values .: РЈСЃРїРµС… - РџРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕРіРѕ РІС‹РїРѕР»РЅРµРЅРёСЏ РІРѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РѕР±СЉРµРєС‚РѕРІ audio.
+;							Р•СЃР»Рё Р±С‹Р» Р·Р°РґР°РЅ РїР°СЂР°РјРµС‚СЂ $iNeed_User = 1, РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ РѕР±СЉРµРєС‚ user, СЃРѕРґРµСЂР¶Р°С‰РёР№ РїРѕР»СЏ:
+;									id вЂ” РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ;
+;									photo вЂ” url С„РѕС‚РѕРіСЂР°С„РёРё РїСЂРѕС„РёР»СЏ;
+;									name вЂ” РёРјСЏ Рё С„Р°РјРёР»РёСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ;
+;									name_gen вЂ” РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ СЂРѕРґРёС‚РµР»СЊРЅРѕРј РїР°РґРµР¶Рµ.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃ СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ audio.
+; 					РћР±СЂР°С‚РёС‚Рµ РІРЅРёРјР°РЅРёРµ, С‡С‚Рѕ РґР°Р¶Рµ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј РїР°СЂР°РјРµС‚СЂР° $iOffset РїРѕР»СѓС‡РёС‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ РѕР± Р°СѓРґРёРѕР·Р°РїРёСЃСЏС…, РЅР°С…РѕРґСЏС‰РёС…СЃСЏ РїРѕСЃР»Рµ РїРµСЂРІС‹С… 6 С‚С‹СЃСЏС‡ РІ СЃРїРёСЃРєРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°, РЅРµРІРѕР·РјРѕР¶РЅРѕ.
 ; ============================================================================================================
-Func _VK_audioGet()
-	Local $sResponse, $asReturn
+Func _VK_audio_Get($iOwnerID = 0, $iAlbumID = Null, $sAudioIDs = Null, $iNeed_User = 0, $iCount = Null, $iOffset = 0)
+	Local $aResponse, $sQuery
 
-	$sResponse = _VK_SendRequest("audio.get.xml", "")
+	$sQuery =  "album_id=" & $iAlbumID & "&audio_ids=" & $sAudioIDs & "&need_user=" & $iNeed_User & "&offset=" & $iOffset & "&count=" & $iCount
+	If $iOwnerID Then $sQuery &= "&owner_id=" & $iOwnerID
+	ConsoleWrite($sQuery & @CRLF)
+	$aResponse = _VK_SendRequest("audio.get", $sQuery)
 
 	If @error Then Return SetError(@error, 0, $aResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
-	Return $asReturn
-
-EndFunc   ;==>_VK_audioget
+	Return $aResponse
+EndFunc   ;==>_VK_audio_Get
 
 
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiogetById()
-; Description ...: Возвращает информацию об аудиозаписях.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ РѕР± Р°СѓРґРёРѕР·Р°РїРёСЃСЏС….
 ; Syntax.........: _VK_audiogetById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiogetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.getById.xml", "")
+	$sResponse = _VK_SendRequest("audio.getById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiogetById
@@ -2487,23 +2525,23 @@ EndFunc   ;==>_VK_audiogetById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiogetLyrics()
-; Description ...: Возвращает текст аудиозаписи.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ С‚РµРєСЃС‚ Р°СѓРґРёРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_audiogetLyrics()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiogetLyrics()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.getLyrics.xml", "")
+	$sResponse = _VK_SendRequest("audio.getLyrics", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiogetLyrics
@@ -2512,23 +2550,23 @@ EndFunc   ;==>_VK_audiogetLyrics
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiosearch()
-; Description ...: Возвращает список аудиозаписей в соответствии с заданным критерием поиска.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р°СѓРґРёРѕР·Р°РїРёСЃРµР№ РІ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРё СЃ Р·Р°РґР°РЅРЅС‹Рј РєСЂРёС‚РµСЂРёРµРј РїРѕРёСЃРєР°.
 ; Syntax.........: _VK_audiosearch()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiosearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.search.xml", "")
+	$sResponse = _VK_SendRequest("audio.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiosearch
@@ -2537,23 +2575,23 @@ EndFunc   ;==>_VK_audiosearch
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiogetUploadServer()
-; Description ...: Возвращает адрес сервера для загрузки аудиозаписей.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР° РґР»СЏ Р·Р°РіСЂСѓР·РєРё Р°СѓРґРёРѕР·Р°РїРёСЃРµР№.
 ; Syntax.........: _VK_audiogetUploadServer()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiogetUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.getUploadServer.xml", "")
+	$sResponse = _VK_SendRequest("audio.getUploadServer", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiogetUploadServer
@@ -2562,23 +2600,23 @@ EndFunc   ;==>_VK_audiogetUploadServer
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiosave()
-; Description ...: Сохраняет аудиозаписи после успешной загрузки.
+; Description ...: РЎРѕС…СЂР°РЅСЏРµС‚ Р°СѓРґРёРѕР·Р°РїРёСЃРё РїРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕР№ Р·Р°РіСЂСѓР·РєРё.
 ; Syntax.........: _VK_audiosave()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiosave()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.save.xml", "")
+	$sResponse = _VK_SendRequest("audio.save", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiosave
@@ -2587,23 +2625,23 @@ EndFunc   ;==>_VK_audiosave
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audioadd()
-; Description ...: Копирует аудиозапись на страницу пользователя или группы.
+; Description ...: РљРѕРїРёСЂСѓРµС‚ Р°СѓРґРёРѕР·Р°РїРёСЃСЊ РЅР° СЃС‚СЂР°РЅРёС†Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_audioadd()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audioadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.add.xml", "")
+	$sResponse = _VK_SendRequest("audio.add", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audioadd
@@ -2612,23 +2650,23 @@ EndFunc   ;==>_VK_audioadd
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiodelete()
-; Description ...: Удаляет аудиозапись со страницы пользователя или сообщества.
+; Description ...: РЈРґР°Р»СЏРµС‚ Р°СѓРґРёРѕР·Р°РїРёСЃСЊ СЃРѕ СЃС‚СЂР°РЅРёС†С‹ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_audiodelete()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiodelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.delete.xml", "")
+	$sResponse = _VK_SendRequest("audio.delete", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiodelete
@@ -2637,23 +2675,23 @@ EndFunc   ;==>_VK_audiodelete
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audioedit()
-; Description ...: Редактирует данные аудиозаписи на странице пользователя или сообщества.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ РґР°РЅРЅС‹Рµ Р°СѓРґРёРѕР·Р°РїРёСЃРё РЅР° СЃС‚СЂР°РЅРёС†Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_audioedit()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audioedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.edit.xml", "")
+	$sResponse = _VK_SendRequest("audio.edit", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audioedit
@@ -2662,23 +2700,23 @@ EndFunc   ;==>_VK_audioedit
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audioreorder()
-; Description ...: Изменяет порядок аудиозаписи, перенося ее между аудиозаписями, идентификаторы которых переданы параметрами <b>after</b> и <b>before</b>.
+; Description ...: РР·РјРµРЅСЏРµС‚ РїРѕСЂСЏРґРѕРє Р°СѓРґРёРѕР·Р°РїРёСЃРё, РїРµСЂРµРЅРѕСЃСЏ РµРµ РјРµР¶РґСѓ Р°СѓРґРёРѕР·Р°РїРёСЃСЏРјРё, РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ РєРѕС‚РѕСЂС‹С… РїРµСЂРµРґР°РЅС‹ РїР°СЂР°РјРµС‚СЂР°РјРё <b>after</b> Рё <b>before</b>.
 ; Syntax.........: _VK_audioreorder()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audioreorder()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.reorder.xml", "")
+	$sResponse = _VK_SendRequest("audio.reorder", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audioreorder
@@ -2687,23 +2725,23 @@ EndFunc   ;==>_VK_audioreorder
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiorestore()
-; Description ...: Восстанавливает аудиозапись после удаления.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ Р°СѓРґРёРѕР·Р°РїРёСЃСЊ РїРѕСЃР»Рµ СѓРґР°Р»РµРЅРёСЏ.
 ; Syntax.........: _VK_audiorestore()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiorestore()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.restore.xml", "")
+	$sResponse = _VK_SendRequest("audio.restore", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiorestore
@@ -2712,23 +2750,23 @@ EndFunc   ;==>_VK_audiorestore
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiogetAlbums()
-; Description ...: Возвращает список альбомов аудиозаписей пользователя или группы.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р°Р»СЊР±РѕРјРѕРІ Р°СѓРґРёРѕР·Р°РїРёСЃРµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_audiogetAlbums()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiogetAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.getAlbums.xml", "")
+	$sResponse = _VK_SendRequest("audio.getAlbums", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiogetAlbums
@@ -2737,23 +2775,23 @@ EndFunc   ;==>_VK_audiogetAlbums
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audioaddAlbum()
-; Description ...: Создает пустой альбом аудиозаписей.
+; Description ...: РЎРѕР·РґР°РµС‚ РїСѓСЃС‚РѕР№ Р°Р»СЊР±РѕРј Р°СѓРґРёРѕР·Р°РїРёСЃРµР№.
 ; Syntax.........: _VK_audioaddAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audioaddAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.addAlbum.xml", "")
+	$sResponse = _VK_SendRequest("audio.addAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audioaddAlbum
@@ -2762,23 +2800,23 @@ EndFunc   ;==>_VK_audioaddAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audioeditAlbum()
-; Description ...: Редактирует название альбома аудиозаписей.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ РЅР°Р·РІР°РЅРёРµ Р°Р»СЊР±РѕРјР° Р°СѓРґРёРѕР·Р°РїРёСЃРµР№.
 ; Syntax.........: _VK_audioeditAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audioeditAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.editAlbum.xml", "")
+	$sResponse = _VK_SendRequest("audio.editAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audioeditAlbum
@@ -2787,23 +2825,23 @@ EndFunc   ;==>_VK_audioeditAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiodeleteAlbum()
-; Description ...: Удаляет альбом аудиозаписей.
+; Description ...: РЈРґР°Р»СЏРµС‚ Р°Р»СЊР±РѕРј Р°СѓРґРёРѕР·Р°РїРёСЃРµР№.
 ; Syntax.........: _VK_audiodeleteAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiodeleteAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.deleteAlbum.xml", "")
+	$sResponse = _VK_SendRequest("audio.deleteAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiodeleteAlbum
@@ -2812,23 +2850,23 @@ EndFunc   ;==>_VK_audiodeleteAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiomoveToAlbum()
-; Description ...: Перемещает аудиозаписи в альбом.
+; Description ...: РџРµСЂРµРјРµС‰Р°РµС‚ Р°СѓРґРёРѕР·Р°РїРёСЃРё РІ Р°Р»СЊР±РѕРј.
 ; Syntax.........: _VK_audiomoveToAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiomoveToAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.moveToAlbum.xml", "")
+	$sResponse = _VK_SendRequest("audio.moveToAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiomoveToAlbum
@@ -2837,23 +2875,23 @@ EndFunc   ;==>_VK_audiomoveToAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiosetBroadcast()
-; Description ...: Транслирует аудиозапись в статус пользователю или сообществу.
+; Description ...: РўСЂР°РЅСЃР»РёСЂСѓРµС‚ Р°СѓРґРёРѕР·Р°РїРёСЃСЊ РІ СЃС‚Р°С‚СѓСЃ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІСѓ.
 ; Syntax.........: _VK_audiosetBroadcast()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiosetBroadcast()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.setBroadcast.xml", "")
+	$sResponse = _VK_SendRequest("audio.setBroadcast", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiosetBroadcast
@@ -2862,23 +2900,23 @@ EndFunc   ;==>_VK_audiosetBroadcast
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiogetBroadcastList()
-; Description ...: Возвращает список друзей и сообществ пользователя, которые транслируют музыку в статус.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РґСЂСѓР·РµР№ Рё СЃРѕРѕР±С‰РµСЃС‚РІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ, РєРѕС‚РѕСЂС‹Рµ С‚СЂР°РЅСЃР»РёСЂСѓСЋС‚ РјСѓР·С‹РєСѓ РІ СЃС‚Р°С‚СѓСЃ.
 ; Syntax.........: _VK_audiogetBroadcastList()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiogetBroadcastList()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.getBroadcastList.xml", "")
+	$sResponse = _VK_SendRequest("audio.getBroadcastList", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiogetBroadcastList
@@ -2887,23 +2925,23 @@ EndFunc   ;==>_VK_audiogetBroadcastList
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiogetRecommendations()
-; Description ...: Возвращает список рекомендуемых аудиозаписей на основе списка воспроизведения заданного пользователя или на основе одной выбранной аудиозаписи.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє СЂРµРєРѕРјРµРЅРґСѓРµРјС‹С… Р°СѓРґРёРѕР·Р°РїРёСЃРµР№ РЅР° РѕСЃРЅРѕРІРµ СЃРїРёСЃРєР° РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёСЏ Р·Р°РґР°РЅРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё РЅР° РѕСЃРЅРѕРІРµ РѕРґРЅРѕР№ РІС‹Р±СЂР°РЅРЅРѕР№ Р°СѓРґРёРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_audiogetRecommendations()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiogetRecommendations()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.getRecommendations.xml", "")
+	$sResponse = _VK_SendRequest("audio.getRecommendations", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiogetRecommendations
@@ -2912,23 +2950,23 @@ EndFunc   ;==>_VK_audiogetRecommendations
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiogetPopular()
-; Description ...: Возвращает список аудиозаписей из раздела "Популярное".
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р°СѓРґРёРѕР·Р°РїРёСЃРµР№ РёР· СЂР°Р·РґРµР»Р° "РџРѕРїСѓР»СЏСЂРЅРѕРµ".
 ; Syntax.........: _VK_audiogetPopular()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiogetPopular()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.getPopular.xml", "")
+	$sResponse = _VK_SendRequest("audio.getPopular", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiogetPopular
@@ -2937,23 +2975,23 @@ EndFunc   ;==>_VK_audiogetPopular
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_audiogetCount()
-; Description ...: Возвращает количество аудиозаписей пользователя или сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ Р°СѓРґРёРѕР·Р°РїРёСЃРµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_audiogetCount()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_audiogetCount()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("audio.getCount.xml", "")
+	$sResponse = _VK_SendRequest("audio.getCount", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_audiogetCount
@@ -2964,23 +3002,23 @@ EndFunc   ;==>_VK_audiogetCount
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pagesget()
-; Description ...: Возвращает информацию о вики-странице.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РІРёРєРё-СЃС‚СЂР°РЅРёС†Рµ.
 ; Syntax.........: _VK_pagesget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pagesget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("pages.get.xml", "")
+	$sResponse = _VK_SendRequest("pages.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pagesget
@@ -2989,23 +3027,23 @@ EndFunc   ;==>_VK_pagesget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pagessave()
-; Description ...: Сохраняет текст вики-страницы.
+; Description ...: РЎРѕС…СЂР°РЅСЏРµС‚ С‚РµРєСЃС‚ РІРёРєРё-СЃС‚СЂР°РЅРёС†С‹.
 ; Syntax.........: _VK_pagessave()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pagessave()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("pages.save.xml", "")
+	$sResponse = _VK_SendRequest("pages.save", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pagessave
@@ -3014,23 +3052,23 @@ EndFunc   ;==>_VK_pagessave
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pagessaveAccess()
-; Description ...: Сохраняет новые настройки доступа на чтение и редактирование вики-страницы.
+; Description ...: РЎРѕС…СЂР°РЅСЏРµС‚ РЅРѕРІС‹Рµ РЅР°СЃС‚СЂРѕР№РєРё РґРѕСЃС‚СѓРїР° РЅР° С‡С‚РµРЅРёРµ Рё СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РІРёРєРё-СЃС‚СЂР°РЅРёС†С‹.
 ; Syntax.........: _VK_pagessaveAccess()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pagessaveAccess()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("pages.saveAccess.xml", "")
+	$sResponse = _VK_SendRequest("pages.saveAccess", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pagessaveAccess
@@ -3039,23 +3077,23 @@ EndFunc   ;==>_VK_pagessaveAccess
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pagesgetHistory()
-; Description ...: Возвращает список всех старых версий вики-страницы.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РІСЃРµС… СЃС‚Р°СЂС‹С… РІРµСЂСЃРёР№ РІРёРєРё-СЃС‚СЂР°РЅРёС†С‹.
 ; Syntax.........: _VK_pagesgetHistory()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pagesgetHistory()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("pages.getHistory.xml", "")
+	$sResponse = _VK_SendRequest("pages.getHistory", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pagesgetHistory
@@ -3064,23 +3102,23 @@ EndFunc   ;==>_VK_pagesgetHistory
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pagesgetTitles()
-; Description ...: Возвращает список вики-страниц в группе.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РІРёРєРё-СЃС‚СЂР°РЅРёС† РІ РіСЂСѓРїРїРµ.
 ; Syntax.........: _VK_pagesgetTitles()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pagesgetTitles()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("pages.getTitles.xml", "")
+	$sResponse = _VK_SendRequest("pages.getTitles", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pagesgetTitles
@@ -3089,23 +3127,23 @@ EndFunc   ;==>_VK_pagesgetTitles
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pagesgetVersion()
-; Description ...: Возвращает текст одной из старых версий страницы.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ С‚РµРєСЃС‚ РѕРґРЅРѕР№ РёР· СЃС‚Р°СЂС‹С… РІРµСЂСЃРёР№ СЃС‚СЂР°РЅРёС†С‹.
 ; Syntax.........: _VK_pagesgetVersion()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pagesgetVersion()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("pages.getVersion.xml", "")
+	$sResponse = _VK_SendRequest("pages.getVersion", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pagesgetVersion
@@ -3114,23 +3152,23 @@ EndFunc   ;==>_VK_pagesgetVersion
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pagesparseWiki()
-; Description ...: Возвращает html-представление вики-разметки.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ html-РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ РІРёРєРё-СЂР°Р·РјРµС‚РєРё.
 ; Syntax.........: _VK_pagesparseWiki()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pagesparseWiki()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("pages.parseWiki.xml", "")
+	$sResponse = _VK_SendRequest("pages.parseWiki", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pagesparseWiki
@@ -3139,23 +3177,23 @@ EndFunc   ;==>_VK_pagesparseWiki
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pagesclearCache()
-; Description ...: Позволяет очистить кеш отдельных <b>внешних</b> страниц, которые могут быть прикреплены к записям ВКонтакте. После очистки кеша при последующем прикреплении ссылки к записи, данные о странице будут обновлены.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РѕС‡РёСЃС‚РёС‚СЊ РєРµС€ РѕС‚РґРµР»СЊРЅС‹С… <b>РІРЅРµС€РЅРёС…</b> СЃС‚СЂР°РЅРёС†, РєРѕС‚РѕСЂС‹Рµ РјРѕРіСѓС‚ Р±С‹С‚СЊ РїСЂРёРєСЂРµРїР»РµРЅС‹ Рє Р·Р°РїРёСЃСЏРј Р’РљРѕРЅС‚Р°РєС‚Рµ. РџРѕСЃР»Рµ РѕС‡РёСЃС‚РєРё РєРµС€Р° РїСЂРё РїРѕСЃР»РµРґСѓСЋС‰РµРј РїСЂРёРєСЂРµРїР»РµРЅРёРё СЃСЃС‹Р»РєРё Рє Р·Р°РїРёСЃРё, РґР°РЅРЅС‹Рµ Рѕ СЃС‚СЂР°РЅРёС†Рµ Р±СѓРґСѓС‚ РѕР±РЅРѕРІР»РµРЅС‹.
 ; Syntax.........: _VK_pagesclearCache()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pagesclearCache()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("pages.clearCache.xml", "")
+	$sResponse = _VK_SendRequest("pages.clearCache", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pagesclearCache
@@ -3166,23 +3204,23 @@ EndFunc   ;==>_VK_pagesclearCache
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsisMember()
-; Description ...: Возвращает информацию о том, является ли пользователь участником сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, СЏРІР»СЏРµС‚СЃСЏ Р»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СѓС‡Р°СЃС‚РЅРёРєРѕРј СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_groupsisMember()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsisMember()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.isMember.xml", "")
+	$sResponse = _VK_SendRequest("groups.isMember", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsisMember
@@ -3191,23 +3229,23 @@ EndFunc   ;==>_VK_groupsisMember
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsgetById()
-; Description ...: Возвращает информацию о заданном сообществе или о нескольких сообществах.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ Р·Р°РґР°РЅРЅРѕРј СЃРѕРѕР±С‰РµСЃС‚РІРµ РёР»Рё Рѕ РЅРµСЃРєРѕР»СЊРєРёС… СЃРѕРѕР±С‰РµСЃС‚РІР°С….
 ; Syntax.........: _VK_groupsgetById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.getById.xml", "")
+	$sResponse = _VK_SendRequest("groups.getById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsgetById
@@ -3216,23 +3254,23 @@ EndFunc   ;==>_VK_groupsgetById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsget()
-; Description ...: Возвращает список сообществ указанного пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє СЃРѕРѕР±С‰РµСЃС‚РІ СѓРєР°Р·Р°РЅРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_groupsget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.get.xml", "")
+	$sResponse = _VK_SendRequest("groups.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsget
@@ -3241,23 +3279,23 @@ EndFunc   ;==>_VK_groupsget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsgetMembers()
-; Description ...: Возвращает список участников сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє СѓС‡Р°СЃС‚РЅРёРєРѕРІ СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_groupsgetMembers()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsgetMembers()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.getMembers.xml", "")
+	$sResponse = _VK_SendRequest("groups.getMembers", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsgetMembers
@@ -3266,23 +3304,23 @@ EndFunc   ;==>_VK_groupsgetMembers
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsjoin()
-; Description ...: Данный метод позволяет вступить в группу, публичную страницу, а также подтвердить участие во встрече.
+; Description ...: Р”Р°РЅРЅС‹Р№ РјРµС‚РѕРґ РїРѕР·РІРѕР»СЏРµС‚ РІСЃС‚СѓРїРёС‚СЊ РІ РіСЂСѓРїРїСѓ, РїСѓР±Р»РёС‡РЅСѓСЋ СЃС‚СЂР°РЅРёС†Сѓ, Р° С‚Р°РєР¶Рµ РїРѕРґС‚РІРµСЂРґРёС‚СЊ СѓС‡Р°СЃС‚РёРµ РІРѕ РІСЃС‚СЂРµС‡Рµ.
 ; Syntax.........: _VK_groupsjoin()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsjoin()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.join.xml", "")
+	$sResponse = _VK_SendRequest("groups.join", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsjoin
@@ -3291,23 +3329,23 @@ EndFunc   ;==>_VK_groupsjoin
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsleave()
-; Description ...: Данный метод позволяет выходить из группы, публичной страницы, или встречи.
+; Description ...: Р”Р°РЅРЅС‹Р№ РјРµС‚РѕРґ РїРѕР·РІРѕР»СЏРµС‚ РІС‹С…РѕРґРёС‚СЊ РёР· РіСЂСѓРїРїС‹, РїСѓР±Р»РёС‡РЅРѕР№ СЃС‚СЂР°РЅРёС†С‹, РёР»Рё РІСЃС‚СЂРµС‡Рё.
 ; Syntax.........: _VK_groupsleave()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsleave()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.leave.xml", "")
+	$sResponse = _VK_SendRequest("groups.leave", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsleave
@@ -3316,23 +3354,23 @@ EndFunc   ;==>_VK_groupsleave
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupssearch()
-; Description ...: Осуществляет поиск сообществ по заданной подстроке.
+; Description ...: РћСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РїРѕРёСЃРє СЃРѕРѕР±С‰РµСЃС‚РІ РїРѕ Р·Р°РґР°РЅРЅРѕР№ РїРѕРґСЃС‚СЂРѕРєРµ.
 ; Syntax.........: _VK_groupssearch()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupssearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.search.xml", "")
+	$sResponse = _VK_SendRequest("groups.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupssearch
@@ -3341,23 +3379,23 @@ EndFunc   ;==>_VK_groupssearch
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsgetInvites()
-; Description ...: Данный метод возвращает список приглашений в сообщества и встречи текущего пользователя.
+; Description ...: Р”Р°РЅРЅС‹Р№ РјРµС‚РѕРґ РІРѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїСЂРёРіР»Р°С€РµРЅРёР№ РІ СЃРѕРѕР±С‰РµСЃС‚РІР° Рё РІСЃС‚СЂРµС‡Рё С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_groupsgetInvites()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsgetInvites()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.getInvites.xml", "")
+	$sResponse = _VK_SendRequest("groups.getInvites", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsgetInvites
@@ -3366,23 +3404,23 @@ EndFunc   ;==>_VK_groupsgetInvites
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsgetInvitedUsers()
-; Description ...: Возвращает список пользователей, которые были приглашены в группу.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РєРѕС‚РѕСЂС‹Рµ Р±С‹Р»Рё РїСЂРёРіР»Р°С€РµРЅС‹ РІ РіСЂСѓРїРїСѓ.
 ; Syntax.........: _VK_groupsgetInvitedUsers()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsgetInvitedUsers()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.getInvitedUsers.xml", "")
+	$sResponse = _VK_SendRequest("groups.getInvitedUsers", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsgetInvitedUsers
@@ -3391,23 +3429,23 @@ EndFunc   ;==>_VK_groupsgetInvitedUsers
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsbanUser()
-; Description ...: Добавляет пользователя в черный список группы.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ С‡РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_groupsbanUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsbanUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.banUser.xml", "")
+	$sResponse = _VK_SendRequest("groups.banUser", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsbanUser
@@ -3416,23 +3454,23 @@ EndFunc   ;==>_VK_groupsbanUser
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsunbanUser()
-; Description ...: Убирает пользователя из черного списка сообщества.
+; Description ...: РЈР±РёСЂР°РµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· С‡РµСЂРЅРѕРіРѕ СЃРїРёСЃРєР° СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_groupsunbanUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsunbanUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.unbanUser.xml", "")
+	$sResponse = _VK_SendRequest("groups.unbanUser", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsunbanUser
@@ -3441,23 +3479,23 @@ EndFunc   ;==>_VK_groupsunbanUser
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsgetBanned()
-; Description ...: Возвращает список забаненных пользователей в сообществе.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р·Р°Р±Р°РЅРµРЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РІ СЃРѕРѕР±С‰РµСЃС‚РІРµ.
 ; Syntax.........: _VK_groupsgetBanned()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsgetBanned()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.getBanned.xml", "")
+	$sResponse = _VK_SendRequest("groups.getBanned", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsgetBanned
@@ -3466,23 +3504,23 @@ EndFunc   ;==>_VK_groupsgetBanned
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupscreate()
-; Description ...: Позволяет создавать новые сообщества.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЃРѕР·РґР°РІР°С‚СЊ РЅРѕРІС‹Рµ СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_groupscreate()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupscreate()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.create.xml", "")
+	$sResponse = _VK_SendRequest("groups.create", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupscreate
@@ -3491,23 +3529,23 @@ EndFunc   ;==>_VK_groupscreate
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsedit()
-; Description ...: Позволяет редактировать информацию групп.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ РіСЂСѓРїРї.
 ; Syntax.........: _VK_groupsedit()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.edit.xml", "")
+	$sResponse = _VK_SendRequest("groups.edit", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsedit
@@ -3516,23 +3554,23 @@ EndFunc   ;==>_VK_groupsedit
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupseditPlace()
-; Description ...: Позволяет редактировать информацию о месте группы.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РјРµСЃС‚Рµ РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_groupseditPlace()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupseditPlace()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.editPlace.xml", "")
+	$sResponse = _VK_SendRequest("groups.editPlace", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupseditPlace
@@ -3541,23 +3579,23 @@ EndFunc   ;==>_VK_groupseditPlace
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsgetSettings()
-; Description ...: Позволяет получать данные, необходимые для отображения страницы редактирования данных сообщества.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР»СѓС‡Р°С‚СЊ РґР°РЅРЅС‹Рµ, РЅРµРѕР±С…РѕРґРёРјС‹Рµ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ СЃС‚СЂР°РЅРёС†С‹ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РґР°РЅРЅС‹С… СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_groupsgetSettings()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsgetSettings()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.getSettings.xml", "")
+	$sResponse = _VK_SendRequest("groups.getSettings", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsgetSettings
@@ -3566,23 +3604,23 @@ EndFunc   ;==>_VK_groupsgetSettings
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsgetRequests()
-; Description ...: Возвращает список заявок на вступление в сообщество.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р·Р°СЏРІРѕРє РЅР° РІСЃС‚СѓРїР»РµРЅРёРµ РІ СЃРѕРѕР±С‰РµСЃС‚РІРѕ.
 ; Syntax.........: _VK_groupsgetRequests()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsgetRequests()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.getRequests.xml", "")
+	$sResponse = _VK_SendRequest("groups.getRequests", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsgetRequests
@@ -3591,23 +3629,23 @@ EndFunc   ;==>_VK_groupsgetRequests
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupseditManager()
-; Description ...: Позволяет назначить/разжаловать руководителя в сообществе или изменить уровень его полномочий.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РЅР°Р·РЅР°С‡РёС‚СЊ/СЂР°Р·Р¶Р°Р»РѕРІР°С‚СЊ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ РІ СЃРѕРѕР±С‰РµСЃС‚РІРµ РёР»Рё РёР·РјРµРЅРёС‚СЊ СѓСЂРѕРІРµРЅСЊ РµРіРѕ РїРѕР»РЅРѕРјРѕС‡РёР№.
 ; Syntax.........: _VK_groupseditManager()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupseditManager()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.editManager.xml", "")
+	$sResponse = _VK_SendRequest("groups.editManager", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupseditManager
@@ -3616,23 +3654,23 @@ EndFunc   ;==>_VK_groupseditManager
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsinvite()
-; Description ...: Позволяет приглашать друзей в группу.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїСЂРёРіР»Р°С€Р°С‚СЊ РґСЂСѓР·РµР№ РІ РіСЂСѓРїРїСѓ.
 ; Syntax.........: _VK_groupsinvite()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsinvite()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.invite.xml", "")
+	$sResponse = _VK_SendRequest("groups.invite", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsinvite
@@ -3641,23 +3679,23 @@ EndFunc   ;==>_VK_groupsinvite
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsaddLink()
-; Description ...: Позволяет добавлять ссылки в сообщество.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РґРѕР±Р°РІР»СЏС‚СЊ СЃСЃС‹Р»РєРё РІ СЃРѕРѕР±С‰РµСЃС‚РІРѕ.
 ; Syntax.........: _VK_groupsaddLink()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsaddLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.addLink.xml", "")
+	$sResponse = _VK_SendRequest("groups.addLink", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsaddLink
@@ -3666,23 +3704,23 @@ EndFunc   ;==>_VK_groupsaddLink
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsdeleteLink()
-; Description ...: Позволяет удалить ссылки из сообщества.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СѓРґР°Р»РёС‚СЊ СЃСЃС‹Р»РєРё РёР· СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_groupsdeleteLink()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsdeleteLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.deleteLink.xml", "")
+	$sResponse = _VK_SendRequest("groups.deleteLink", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsdeleteLink
@@ -3691,23 +3729,23 @@ EndFunc   ;==>_VK_groupsdeleteLink
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupseditLink()
-; Description ...: Позволяет редактировать ссылки в сообществе.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ СЃСЃС‹Р»РєРё РІ СЃРѕРѕР±С‰РµСЃС‚РІРµ.
 ; Syntax.........: _VK_groupseditLink()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupseditLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.editLink.xml", "")
+	$sResponse = _VK_SendRequest("groups.editLink", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupseditLink
@@ -3716,23 +3754,23 @@ EndFunc   ;==>_VK_groupseditLink
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsreorderLink()
-; Description ...: Позволяет менять местоположение ссылки в списке.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РјРµРЅСЏС‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ СЃСЃС‹Р»РєРё РІ СЃРїРёСЃРєРµ.
 ; Syntax.........: _VK_groupsreorderLink()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsreorderLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.reorderLink.xml", "")
+	$sResponse = _VK_SendRequest("groups.reorderLink", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsreorderLink
@@ -3741,23 +3779,23 @@ EndFunc   ;==>_VK_groupsreorderLink
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsremoveUser()
-; Description ...: Позволяет исключить пользователя из группы или отклонить заявку на вступление.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РёСЃРєР»СЋС‡РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· РіСЂСѓРїРїС‹ РёР»Рё РѕС‚РєР»РѕРЅРёС‚СЊ Р·Р°СЏРІРєСѓ РЅР° РІСЃС‚СѓРїР»РµРЅРёРµ.
 ; Syntax.........: _VK_groupsremoveUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsremoveUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.removeUser.xml", "")
+	$sResponse = _VK_SendRequest("groups.removeUser", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsremoveUser
@@ -3766,23 +3804,23 @@ EndFunc   ;==>_VK_groupsremoveUser
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_groupsapproveRequest()
-; Description ...: Позволяет одобрить заявку в группу от пользователя.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РѕРґРѕР±СЂРёС‚СЊ Р·Р°СЏРІРєСѓ РІ РіСЂСѓРїРїСѓ РѕС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_groupsapproveRequest()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_groupsapproveRequest()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("groups.approveRequest.xml", "")
+	$sResponse = _VK_SendRequest("groups.approveRequest", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_groupsapproveRequest
@@ -3793,23 +3831,23 @@ EndFunc   ;==>_VK_groupsapproveRequest
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardgetTopics()
-; Description ...: Возвращает список тем в обсуждениях указанной группы.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє С‚РµРј РІ РѕР±СЃСѓР¶РґРµРЅРёСЏС… СѓРєР°Р·Р°РЅРЅРѕР№ РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_boardgetTopics()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardgetTopics()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.getTopics.xml", "")
+	$sResponse = _VK_SendRequest("board.getTopics", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardgetTopics
@@ -3818,23 +3856,23 @@ EndFunc   ;==>_VK_boardgetTopics
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardgetComments()
-; Description ...: Возвращает список сообщений в указанной теме.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє СЃРѕРѕР±С‰РµРЅРёР№ РІ СѓРєР°Р·Р°РЅРЅРѕР№ С‚РµРјРµ.
 ; Syntax.........: _VK_boardgetComments()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.getComments.xml", "")
+	$sResponse = _VK_SendRequest("board.getComments", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardgetComments
@@ -3843,23 +3881,23 @@ EndFunc   ;==>_VK_boardgetComments
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardaddTopic()
-; Description ...: Создает новую тему в списке обсуждений группы.
+; Description ...: РЎРѕР·РґР°РµС‚ РЅРѕРІСѓСЋ С‚РµРјСѓ РІ СЃРїРёСЃРєРµ РѕР±СЃСѓР¶РґРµРЅРёР№ РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_boardaddTopic()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardaddTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.addTopic.xml", "")
+	$sResponse = _VK_SendRequest("board.addTopic", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardaddTopic
@@ -3868,23 +3906,23 @@ EndFunc   ;==>_VK_boardaddTopic
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardaddComment()
-; Description ...: Добавляет новое сообщение в теме сообщества.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РЅРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ РІ С‚РµРјРµ СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_boardaddComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardaddComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.addComment.xml", "")
+	$sResponse = _VK_SendRequest("board.addComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardaddComment
@@ -3893,23 +3931,23 @@ EndFunc   ;==>_VK_boardaddComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boarddeleteTopic()
-; Description ...: Удаляет тему в обсуждениях группы.
+; Description ...: РЈРґР°Р»СЏРµС‚ С‚РµРјСѓ РІ РѕР±СЃСѓР¶РґРµРЅРёСЏС… РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_boarddeleteTopic()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boarddeleteTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.deleteTopic.xml", "")
+	$sResponse = _VK_SendRequest("board.deleteTopic", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boarddeleteTopic
@@ -3918,23 +3956,23 @@ EndFunc   ;==>_VK_boarddeleteTopic
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardeditTopic()
-; Description ...: Изменяет заголовок темы в списке обсуждений группы.
+; Description ...: РР·РјРµРЅСЏРµС‚ Р·Р°РіРѕР»РѕРІРѕРє С‚РµРјС‹ РІ СЃРїРёСЃРєРµ РѕР±СЃСѓР¶РґРµРЅРёР№ РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_boardeditTopic()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardeditTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.editTopic.xml", "")
+	$sResponse = _VK_SendRequest("board.editTopic", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardeditTopic
@@ -3943,23 +3981,23 @@ EndFunc   ;==>_VK_boardeditTopic
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardeditComment()
-; Description ...: Редактирует одно из сообщений в теме группы.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ РѕРґРЅРѕ РёР· СЃРѕРѕР±С‰РµРЅРёР№ РІ С‚РµРјРµ РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_boardeditComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardeditComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.editComment.xml", "")
+	$sResponse = _VK_SendRequest("board.editComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardeditComment
@@ -3968,23 +4006,23 @@ EndFunc   ;==>_VK_boardeditComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardrestoreComment()
-; Description ...: Восстанавливает удаленное сообщение темы в обсуждениях группы.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СѓРґР°Р»РµРЅРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ С‚РµРјС‹ РІ РѕР±СЃСѓР¶РґРµРЅРёСЏС… РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_boardrestoreComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardrestoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.restoreComment.xml", "")
+	$sResponse = _VK_SendRequest("board.restoreComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardrestoreComment
@@ -3993,23 +4031,23 @@ EndFunc   ;==>_VK_boardrestoreComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boarddeleteComment()
-; Description ...: Удаляет сообщение темы в обсуждениях сообщества.
+; Description ...: РЈРґР°Р»СЏРµС‚ СЃРѕРѕР±С‰РµРЅРёРµ С‚РµРјС‹ РІ РѕР±СЃСѓР¶РґРµРЅРёСЏС… СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_boarddeleteComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boarddeleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.deleteComment.xml", "")
+	$sResponse = _VK_SendRequest("board.deleteComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boarddeleteComment
@@ -4018,23 +4056,23 @@ EndFunc   ;==>_VK_boarddeleteComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardopenTopic()
-; Description ...: Открывает ранее закрытую тему (в ней станет возможно оставлять новые сообщения).
+; Description ...: РћС‚РєСЂС‹РІР°РµС‚ СЂР°РЅРµРµ Р·Р°РєСЂС‹С‚СѓСЋ С‚РµРјСѓ (РІ РЅРµР№ СЃС‚Р°РЅРµС‚ РІРѕР·РјРѕР¶РЅРѕ РѕСЃС‚Р°РІР»СЏС‚СЊ РЅРѕРІС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ).
 ; Syntax.........: _VK_boardopenTopic()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardopenTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.openTopic.xml", "")
+	$sResponse = _VK_SendRequest("board.openTopic", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardopenTopic
@@ -4043,23 +4081,23 @@ EndFunc   ;==>_VK_boardopenTopic
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardcloseTopic()
-; Description ...: Закрывает тему в списке обсуждений группы (в такой теме невозможно оставлять новые сообщения).
+; Description ...: Р—Р°РєСЂС‹РІР°РµС‚ С‚РµРјСѓ РІ СЃРїРёСЃРєРµ РѕР±СЃСѓР¶РґРµРЅРёР№ РіСЂСѓРїРїС‹ (РІ С‚Р°РєРѕР№ С‚РµРјРµ РЅРµРІРѕР·РјРѕР¶РЅРѕ РѕСЃС‚Р°РІР»СЏС‚СЊ РЅРѕРІС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ).
 ; Syntax.........: _VK_boardcloseTopic()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardcloseTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.closeTopic.xml", "")
+	$sResponse = _VK_SendRequest("board.closeTopic", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardcloseTopic
@@ -4068,23 +4106,23 @@ EndFunc   ;==>_VK_boardcloseTopic
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardfixTopic()
-; Description ...: Закрепляет тему в списке обсуждений группы (такая тема при любой сортировке выводится выше остальных).
+; Description ...: Р—Р°РєСЂРµРїР»СЏРµС‚ С‚РµРјСѓ РІ СЃРїРёСЃРєРµ РѕР±СЃСѓР¶РґРµРЅРёР№ РіСЂСѓРїРїС‹ (С‚Р°РєР°СЏ С‚РµРјР° РїСЂРё Р»СЋР±РѕР№ СЃРѕСЂС‚РёСЂРѕРІРєРµ РІС‹РІРѕРґРёС‚СЃСЏ РІС‹С€Рµ РѕСЃС‚Р°Р»СЊРЅС‹С…).
 ; Syntax.........: _VK_boardfixTopic()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardfixTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.fixTopic.xml", "")
+	$sResponse = _VK_SendRequest("board.fixTopic", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardfixTopic
@@ -4093,23 +4131,23 @@ EndFunc   ;==>_VK_boardfixTopic
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_boardunfixTopic()
-; Description ...: Отменяет прикрепление темы в списке обсуждений группы (тема будет выводиться согласно выбранной сортировке).
+; Description ...: РћС‚РјРµРЅСЏРµС‚ РїСЂРёРєСЂРµРїР»РµРЅРёРµ С‚РµРјС‹ РІ СЃРїРёСЃРєРµ РѕР±СЃСѓР¶РґРµРЅРёР№ РіСЂСѓРїРїС‹ (С‚РµРјР° Р±СѓРґРµС‚ РІС‹РІРѕРґРёС‚СЊСЃСЏ СЃРѕРіР»Р°СЃРЅРѕ РІС‹Р±СЂР°РЅРЅРѕР№ СЃРѕСЂС‚РёСЂРѕРІРєРµ).
 ; Syntax.........: _VK_boardunfixTopic()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_boardunfixTopic()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("board.unfixTopic.xml", "")
+	$sResponse = _VK_SendRequest("board.unfixTopic", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_boardunfixTopic
@@ -4120,23 +4158,23 @@ EndFunc   ;==>_VK_boardunfixTopic
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoget()
-; Description ...: Возвращает информацию о видеозаписях.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РІРёРґРµРѕР·Р°РїРёСЃСЏС….
 ; Syntax.........: _VK_videoget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.get.xml", "")
+	$sResponse = _VK_SendRequest("video.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoget
@@ -4145,23 +4183,23 @@ EndFunc   ;==>_VK_videoget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoedit()
-; Description ...: Редактирует данные видеозаписи на странице пользователя.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ РґР°РЅРЅС‹Рµ РІРёРґРµРѕР·Р°РїРёСЃРё РЅР° СЃС‚СЂР°РЅРёС†Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_videoedit()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.edit.xml", "")
+	$sResponse = _VK_SendRequest("video.edit", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoedit
@@ -4170,23 +4208,23 @@ EndFunc   ;==>_VK_videoedit
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoadd()
-; Description ...: Добавляет видеозапись в список пользователя.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РІРёРґРµРѕР·Р°РїРёСЃСЊ РІ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_videoadd()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.add.xml", "")
+	$sResponse = _VK_SendRequest("video.add", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoadd
@@ -4195,23 +4233,23 @@ EndFunc   ;==>_VK_videoadd
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videosave()
-; Description ...: Возвращает адрес сервера (необходимый для загрузки) и данные видеозаписи.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР° (РЅРµРѕР±С…РѕРґРёРјС‹Р№ РґР»СЏ Р·Р°РіСЂСѓР·РєРё) Рё РґР°РЅРЅС‹Рµ РІРёРґРµРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_videosave()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videosave()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.save.xml", "")
+	$sResponse = _VK_SendRequest("video.save", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videosave
@@ -4220,23 +4258,23 @@ EndFunc   ;==>_VK_videosave
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videodelete()
-; Description ...: Удаляет видеозапись со страницы пользователя.
+; Description ...: РЈРґР°Р»СЏРµС‚ РІРёРґРµРѕР·Р°РїРёСЃСЊ СЃРѕ СЃС‚СЂР°РЅРёС†С‹ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_videodelete()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videodelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.delete.xml", "")
+	$sResponse = _VK_SendRequest("video.delete", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videodelete
@@ -4245,23 +4283,23 @@ EndFunc   ;==>_VK_videodelete
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videorestore()
-; Description ...: Восстанавливает удаленную видеозапись.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СѓРґР°Р»РµРЅРЅСѓСЋ РІРёРґРµРѕР·Р°РїРёСЃСЊ.
 ; Syntax.........: _VK_videorestore()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videorestore()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.restore.xml", "")
+	$sResponse = _VK_SendRequest("video.restore", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videorestore
@@ -4270,23 +4308,23 @@ EndFunc   ;==>_VK_videorestore
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videosearch()
-; Description ...: Возвращает список видеозаписей в соответствии с заданным критерием поиска.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РІРёРґРµРѕР·Р°РїРёСЃРµР№ РІ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРё СЃ Р·Р°РґР°РЅРЅС‹Рј РєСЂРёС‚РµСЂРёРµРј РїРѕРёСЃРєР°.
 ; Syntax.........: _VK_videosearch()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videosearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.search.xml", "")
+	$sResponse = _VK_SendRequest("video.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videosearch
@@ -4295,23 +4333,23 @@ EndFunc   ;==>_VK_videosearch
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videogetUserVideos()
-; Description ...: Возвращает список видеозаписей, на которых отмечен пользователь.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РІРёРґРµРѕР·Р°РїРёСЃРµР№, РЅР° РєРѕС‚РѕСЂС‹С… РѕС‚РјРµС‡РµРЅ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ.
 ; Syntax.........: _VK_videogetUserVideos()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videogetUserVideos()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.getUserVideos.xml", "")
+	$sResponse = _VK_SendRequest("video.getUserVideos", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videogetUserVideos
@@ -4320,23 +4358,23 @@ EndFunc   ;==>_VK_videogetUserVideos
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videogetAlbums()
-; Description ...: Возвращает список альбомов видеозаписей пользователя или сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р°Р»СЊР±РѕРјРѕРІ РІРёРґРµРѕР·Р°РїРёСЃРµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_videogetAlbums()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videogetAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.getAlbums.xml", "")
+	$sResponse = _VK_SendRequest("video.getAlbums", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videogetAlbums
@@ -4345,23 +4383,23 @@ EndFunc   ;==>_VK_videogetAlbums
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videogetAlbumById()
-; Description ...: Позволяет получить информацию об альбоме с видео.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР»СѓС‡РёС‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ РѕР± Р°Р»СЊР±РѕРјРµ СЃ РІРёРґРµРѕ.
 ; Syntax.........: _VK_videogetAlbumById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videogetAlbumById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.getAlbumById.xml", "")
+	$sResponse = _VK_SendRequest("video.getAlbumById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videogetAlbumById
@@ -4370,23 +4408,23 @@ EndFunc   ;==>_VK_videogetAlbumById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoaddAlbum()
-; Description ...: Создает пустой альбом видеозаписей.
+; Description ...: РЎРѕР·РґР°РµС‚ РїСѓСЃС‚РѕР№ Р°Р»СЊР±РѕРј РІРёРґРµРѕР·Р°РїРёСЃРµР№.
 ; Syntax.........: _VK_videoaddAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoaddAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.addAlbum.xml", "")
+	$sResponse = _VK_SendRequest("video.addAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoaddAlbum
@@ -4395,23 +4433,23 @@ EndFunc   ;==>_VK_videoaddAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoeditAlbum()
-; Description ...: Редактирует название альбома видеозаписей.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ РЅР°Р·РІР°РЅРёРµ Р°Р»СЊР±РѕРјР° РІРёРґРµРѕР·Р°РїРёСЃРµР№.
 ; Syntax.........: _VK_videoeditAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoeditAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.editAlbum.xml", "")
+	$sResponse = _VK_SendRequest("video.editAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoeditAlbum
@@ -4420,23 +4458,23 @@ EndFunc   ;==>_VK_videoeditAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videodeleteAlbum()
-; Description ...: Удаляет альбом видеозаписей.
+; Description ...: РЈРґР°Р»СЏРµС‚ Р°Р»СЊР±РѕРј РІРёРґРµРѕР·Р°РїРёСЃРµР№.
 ; Syntax.........: _VK_videodeleteAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videodeleteAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.deleteAlbum.xml", "")
+	$sResponse = _VK_SendRequest("video.deleteAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videodeleteAlbum
@@ -4445,23 +4483,23 @@ EndFunc   ;==>_VK_videodeleteAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoreorderAlbums()
-; Description ...: Позволяет изменить порядок альбомов с видео.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РёР·РјРµРЅРёС‚СЊ РїРѕСЂСЏРґРѕРє Р°Р»СЊР±РѕРјРѕРІ СЃ РІРёРґРµРѕ.
 ; Syntax.........: _VK_videoreorderAlbums()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoreorderAlbums()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.reorderAlbums.xml", "")
+	$sResponse = _VK_SendRequest("video.reorderAlbums", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoreorderAlbums
@@ -4470,23 +4508,23 @@ EndFunc   ;==>_VK_videoreorderAlbums
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoaddToAlbum()
-; Description ...: Позволяет добавить видеозапись в альбом.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РґРѕР±Р°РІРёС‚СЊ РІРёРґРµРѕР·Р°РїРёСЃСЊ РІ Р°Р»СЊР±РѕРј.
 ; Syntax.........: _VK_videoaddToAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoaddToAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.addToAlbum.xml", "")
+	$sResponse = _VK_SendRequest("video.addToAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoaddToAlbum
@@ -4495,23 +4533,23 @@ EndFunc   ;==>_VK_videoaddToAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoremoveFromAlbum()
-; Description ...: Позволяет убрать видеозапись из альбома.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СѓР±СЂР°С‚СЊ РІРёРґРµРѕР·Р°РїРёСЃСЊ РёР· Р°Р»СЊР±РѕРјР°.
 ; Syntax.........: _VK_videoremoveFromAlbum()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoremoveFromAlbum()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.removeFromAlbum.xml", "")
+	$sResponse = _VK_SendRequest("video.removeFromAlbum", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoremoveFromAlbum
@@ -4520,23 +4558,23 @@ EndFunc   ;==>_VK_videoremoveFromAlbum
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videogetAlbumsByVideo()
-; Description ...: Возвращает список альбомов, в которых находится видеозапись.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р°Р»СЊР±РѕРјРѕРІ, РІ РєРѕС‚РѕСЂС‹С… РЅР°С…РѕРґРёС‚СЃСЏ РІРёРґРµРѕР·Р°РїРёСЃСЊ.
 ; Syntax.........: _VK_videogetAlbumsByVideo()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videogetAlbumsByVideo()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.getAlbumsByVideo.xml", "")
+	$sResponse = _VK_SendRequest("video.getAlbumsByVideo", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videogetAlbumsByVideo
@@ -4545,23 +4583,23 @@ EndFunc   ;==>_VK_videogetAlbumsByVideo
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videogetComments()
-; Description ...: Возвращает список комментариев к видеозаписи.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ Рє РІРёРґРµРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_videogetComments()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videogetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.getComments.xml", "")
+	$sResponse = _VK_SendRequest("video.getComments", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videogetComments
@@ -4570,23 +4608,23 @@ EndFunc   ;==>_VK_videogetComments
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videocreateComment()
-; Description ...: Cоздает новый комментарий к видеозаписи
+; Description ...: CРѕР·РґР°РµС‚ РЅРѕРІС‹Р№ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє РІРёРґРµРѕР·Р°РїРёСЃРё
 ; Syntax.........: _VK_videocreateComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videocreateComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.createComment.xml", "")
+	$sResponse = _VK_SendRequest("video.createComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videocreateComment
@@ -4595,23 +4633,23 @@ EndFunc   ;==>_VK_videocreateComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videodeleteComment()
-; Description ...: Удаляет комментарий к видеозаписи.
+; Description ...: РЈРґР°Р»СЏРµС‚ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє РІРёРґРµРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_videodeleteComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videodeleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.deleteComment.xml", "")
+	$sResponse = _VK_SendRequest("video.deleteComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videodeleteComment
@@ -4620,23 +4658,23 @@ EndFunc   ;==>_VK_videodeleteComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videorestoreComment()
-; Description ...: Восстанавливает удаленный комментарий к видеозаписи.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СѓРґР°Р»РµРЅРЅС‹Р№ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє РІРёРґРµРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_videorestoreComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videorestoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.restoreComment.xml", "")
+	$sResponse = _VK_SendRequest("video.restoreComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videorestoreComment
@@ -4645,23 +4683,23 @@ EndFunc   ;==>_VK_videorestoreComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoeditComment()
-; Description ...: Изменяет текст комментария к видеозаписи.
+; Description ...: РР·РјРµРЅСЏРµС‚ С‚РµРєСЃС‚ РєРѕРјРјРµРЅС‚Р°СЂРёСЏ Рє РІРёРґРµРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_videoeditComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoeditComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.editComment.xml", "")
+	$sResponse = _VK_SendRequest("video.editComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoeditComment
@@ -4670,23 +4708,23 @@ EndFunc   ;==>_VK_videoeditComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videogetTags()
-; Description ...: Возвращает список отметок на видеозаписи.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РѕС‚РјРµС‚РѕРє РЅР° РІРёРґРµРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_videogetTags()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videogetTags()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.getTags.xml", "")
+	$sResponse = _VK_SendRequest("video.getTags", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videogetTags
@@ -4695,23 +4733,23 @@ EndFunc   ;==>_VK_videogetTags
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoputTag()
-; Description ...: Добавляет отметку на видеозапись.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РѕС‚РјРµС‚РєСѓ РЅР° РІРёРґРµРѕР·Р°РїРёСЃСЊ.
 ; Syntax.........: _VK_videoputTag()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoputTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.putTag.xml", "")
+	$sResponse = _VK_SendRequest("video.putTag", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoputTag
@@ -4720,23 +4758,23 @@ EndFunc   ;==>_VK_videoputTag
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoremoveTag()
-; Description ...: Удаляет отметку с видеозаписи.
+; Description ...: РЈРґР°Р»СЏРµС‚ РѕС‚РјРµС‚РєСѓ СЃ РІРёРґРµРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_videoremoveTag()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoremoveTag()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.removeTag.xml", "")
+	$sResponse = _VK_SendRequest("video.removeTag", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoremoveTag
@@ -4745,23 +4783,23 @@ EndFunc   ;==>_VK_videoremoveTag
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videogetNewTags()
-; Description ...: Возвращает список видеозаписей, на которых есть непросмотренные отметки.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РІРёРґРµРѕР·Р°РїРёСЃРµР№, РЅР° РєРѕС‚РѕСЂС‹С… РµСЃС‚СЊ РЅРµРїСЂРѕСЃРјРѕС‚СЂРµРЅРЅС‹Рµ РѕС‚РјРµС‚РєРё.
 ; Syntax.........: _VK_videogetNewTags()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videogetNewTags()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.getNewTags.xml", "")
+	$sResponse = _VK_SendRequest("video.getNewTags", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videogetNewTags
@@ -4770,23 +4808,23 @@ EndFunc   ;==>_VK_videogetNewTags
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoreport()
-; Description ...: Позволяет пожаловаться на видеозапись.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР¶Р°Р»РѕРІР°С‚СЊСЃСЏ РЅР° РІРёРґРµРѕР·Р°РїРёСЃСЊ.
 ; Syntax.........: _VK_videoreport()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoreport()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.report.xml", "")
+	$sResponse = _VK_SendRequest("video.report", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoreport
@@ -4795,23 +4833,23 @@ EndFunc   ;==>_VK_videoreport
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_videoreportComment()
-; Description ...: Позволяет пожаловаться на комментарий к видеозаписи.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР¶Р°Р»РѕРІР°С‚СЊСЃСЏ РЅР° РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє РІРёРґРµРѕР·Р°РїРёСЃРё.
 ; Syntax.........: _VK_videoreportComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_videoreportComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("video.reportComment.xml", "")
+	$sResponse = _VK_SendRequest("video.reportComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_videoreportComment
@@ -4822,23 +4860,23 @@ EndFunc   ;==>_VK_videoreportComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notesget()
-; Description ...: Возвращает список заметок, созданных пользователем.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р·Р°РјРµС‚РѕРє, СЃРѕР·РґР°РЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј.
 ; Syntax.........: _VK_notesget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notesget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.get.xml", "")
+	$sResponse = _VK_SendRequest("notes.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notesget
@@ -4847,23 +4885,23 @@ EndFunc   ;==>_VK_notesget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notesgetById()
-; Description ...: Возвращает заметку по её <b>id</b>.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р·Р°РјРµС‚РєСѓ РїРѕ РµС‘ <b>id</b>.
 ; Syntax.........: _VK_notesgetById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notesgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.getById.xml", "")
+	$sResponse = _VK_SendRequest("notes.getById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notesgetById
@@ -4872,23 +4910,23 @@ EndFunc   ;==>_VK_notesgetById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notesgetFriendsNotes()
-; Description ...: Возвращает список заметок друзей пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р·Р°РјРµС‚РѕРє РґСЂСѓР·РµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_notesgetFriendsNotes()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notesgetFriendsNotes()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.getFriendsNotes.xml", "")
+	$sResponse = _VK_SendRequest("notes.getFriendsNotes", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notesgetFriendsNotes
@@ -4897,23 +4935,23 @@ EndFunc   ;==>_VK_notesgetFriendsNotes
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notesadd()
-; Description ...: Создает новую заметку у текущего пользователя.
+; Description ...: РЎРѕР·РґР°РµС‚ РЅРѕРІСѓСЋ Р·Р°РјРµС‚РєСѓ Сѓ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_notesadd()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notesadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.add.xml", "")
+	$sResponse = _VK_SendRequest("notes.add", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notesadd
@@ -4922,23 +4960,23 @@ EndFunc   ;==>_VK_notesadd
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notesedit()
-; Description ...: Редактирует заметку текущего пользователя.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ Р·Р°РјРµС‚РєСѓ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_notesedit()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notesedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.edit.xml", "")
+	$sResponse = _VK_SendRequest("notes.edit", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notesedit
@@ -4947,23 +4985,23 @@ EndFunc   ;==>_VK_notesedit
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notesdelete()
-; Description ...: Удаляет заметку текущего пользователя.
+; Description ...: РЈРґР°Р»СЏРµС‚ Р·Р°РјРµС‚РєСѓ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_notesdelete()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notesdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.delete.xml", "")
+	$sResponse = _VK_SendRequest("notes.delete", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notesdelete
@@ -4972,23 +5010,23 @@ EndFunc   ;==>_VK_notesdelete
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notesgetComments()
-; Description ...: Возвращает список комментариев к заметке.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ Рє Р·Р°РјРµС‚РєРµ.
 ; Syntax.........: _VK_notesgetComments()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notesgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.getComments.xml", "")
+	$sResponse = _VK_SendRequest("notes.getComments", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notesgetComments
@@ -4997,23 +5035,23 @@ EndFunc   ;==>_VK_notesgetComments
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notescreateComment()
-; Description ...: Добавляет новый комментарий к заметке.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РЅРѕРІС‹Р№ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє Р·Р°РјРµС‚РєРµ.
 ; Syntax.........: _VK_notescreateComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notescreateComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.createComment.xml", "")
+	$sResponse = _VK_SendRequest("notes.createComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notescreateComment
@@ -5022,23 +5060,23 @@ EndFunc   ;==>_VK_notescreateComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_noteseditComment()
-; Description ...: Редактирует указанный комментарий у заметки.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ СѓРєР°Р·Р°РЅРЅС‹Р№ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Сѓ Р·Р°РјРµС‚РєРё.
 ; Syntax.........: _VK_noteseditComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_noteseditComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.editComment.xml", "")
+	$sResponse = _VK_SendRequest("notes.editComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_noteseditComment
@@ -5047,23 +5085,23 @@ EndFunc   ;==>_VK_noteseditComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notesdeleteComment()
-; Description ...: Удаляет комментарий к заметке.
+; Description ...: РЈРґР°Р»СЏРµС‚ РєРѕРјРјРµРЅС‚Р°СЂРёР№ Рє Р·Р°РјРµС‚РєРµ.
 ; Syntax.........: _VK_notesdeleteComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notesdeleteComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.deleteComment.xml", "")
+	$sResponse = _VK_SendRequest("notes.deleteComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notesdeleteComment
@@ -5072,23 +5110,23 @@ EndFunc   ;==>_VK_notesdeleteComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notesrestoreComment()
-; Description ...: Восстанавливает удалённый комментарий.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СѓРґР°Р»С‘РЅРЅС‹Р№ РєРѕРјРјРµРЅС‚Р°СЂРёР№.
 ; Syntax.........: _VK_notesrestoreComment()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notesrestoreComment()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notes.restoreComment.xml", "")
+	$sResponse = _VK_SendRequest("notes.restoreComment", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notesrestoreComment
@@ -5099,23 +5137,23 @@ EndFunc   ;==>_VK_notesrestoreComment
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_placesadd()
-; Description ...: Добавляет новое место в базу географических мест.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РЅРѕРІРѕРµ РјРµСЃС‚Рѕ РІ Р±Р°Р·Сѓ РіРµРѕРіСЂР°С„РёС‡РµСЃРєРёС… РјРµСЃС‚.
 ; Syntax.........: _VK_placesadd()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_placesadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("places.add.xml", "")
+	$sResponse = _VK_SendRequest("places.add", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_placesadd
@@ -5124,23 +5162,23 @@ EndFunc   ;==>_VK_placesadd
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_placesgetById()
-; Description ...: Возвращает информацию о местах по их идентификаторам.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РјРµСЃС‚Р°С… РїРѕ РёС… РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР°Рј.
 ; Syntax.........: _VK_placesgetById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_placesgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("places.getById.xml", "")
+	$sResponse = _VK_SendRequest("places.getById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_placesgetById
@@ -5149,23 +5187,23 @@ EndFunc   ;==>_VK_placesgetById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_placessearch()
-; Description ...: Возвращает список мест, найденных по заданным условиям поиска.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РјРµСЃС‚, РЅР°Р№РґРµРЅРЅС‹С… РїРѕ Р·Р°РґР°РЅРЅС‹Рј СѓСЃР»РѕРІРёСЏРј РїРѕРёСЃРєР°.
 ; Syntax.........: _VK_placessearch()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_placessearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("places.search.xml", "")
+	$sResponse = _VK_SendRequest("places.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_placessearch
@@ -5174,23 +5212,23 @@ EndFunc   ;==>_VK_placessearch
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_placescheckin()
-; Description ...: Отмечает пользователя в указанном месте.
+; Description ...: РћС‚РјРµС‡Р°РµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ СѓРєР°Р·Р°РЅРЅРѕРј РјРµСЃС‚Рµ.
 ; Syntax.........: _VK_placescheckin()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_placescheckin()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("places.checkin.xml", "")
+	$sResponse = _VK_SendRequest("places.checkin", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_placescheckin
@@ -5199,23 +5237,23 @@ EndFunc   ;==>_VK_placescheckin
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_placesgetCheckins()
-; Description ...: Возвращает список отметок пользователей в местах согласно заданным параметрам.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РѕС‚РјРµС‚РѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РІ РјРµСЃС‚Р°С… СЃРѕРіР»Р°СЃРЅРѕ Р·Р°РґР°РЅРЅС‹Рј РїР°СЂР°РјРµС‚СЂР°Рј.
 ; Syntax.........: _VK_placesgetCheckins()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_placesgetCheckins()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("places.getCheckins.xml", "")
+	$sResponse = _VK_SendRequest("places.getCheckins", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_placesgetCheckins
@@ -5224,23 +5262,23 @@ EndFunc   ;==>_VK_placesgetCheckins
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_placesgetTypes()
-; Description ...: Возвращает список всех возможных типов мест.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РІСЃРµС… РІРѕР·РјРѕР¶РЅС‹С… С‚РёРїРѕРІ РјРµСЃС‚.
 ; Syntax.........: _VK_placesgetTypes()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_placesgetTypes()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("places.getTypes.xml", "")
+	$sResponse = _VK_SendRequest("places.getTypes", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_placesgetTypes
@@ -5251,23 +5289,23 @@ EndFunc   ;==>_VK_placesgetTypes
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountgetCounters()
-; Description ...: Возвращает ненулевые значения счетчиков пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РЅРµРЅСѓР»РµРІС‹Рµ Р·РЅР°С‡РµРЅРёСЏ СЃС‡РµС‚С‡РёРєРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_accountgetCounters()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountgetCounters()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.getCounters.xml", "")
+	$sResponse = _VK_SendRequest("account.getCounters", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountgetCounters
@@ -5276,23 +5314,23 @@ EndFunc   ;==>_VK_accountgetCounters
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountsetNameInMenu()
-; Description ...: Устанавливает короткое название приложения (до 17 символов), которое выводится пользователю в левом меню.
+; Description ...: РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РєРѕСЂРѕС‚РєРѕРµ РЅР°Р·РІР°РЅРёРµ РїСЂРёР»РѕР¶РµРЅРёСЏ (РґРѕ 17 СЃРёРјРІРѕР»РѕРІ), РєРѕС‚РѕСЂРѕРµ РІС‹РІРѕРґРёС‚СЃСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РІ Р»РµРІРѕРј РјРµРЅСЋ.
 ; Syntax.........: _VK_accountsetNameInMenu()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountsetNameInMenu()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.setNameInMenu.xml", "")
+	$sResponse = _VK_SendRequest("account.setNameInMenu", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountsetNameInMenu
@@ -5301,23 +5339,23 @@ EndFunc   ;==>_VK_accountsetNameInMenu
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountsetOnline()
-; Description ...: Помечает текущего пользователя как online на 15 минут.
+; Description ...: РџРѕРјРµС‡Р°РµС‚ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РєР°Рє online РЅР° 15 РјРёРЅСѓС‚.
 ; Syntax.........: _VK_accountsetOnline()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountsetOnline()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.setOnline.xml", "")
+	$sResponse = _VK_SendRequest("account.setOnline", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountsetOnline
@@ -5326,23 +5364,23 @@ EndFunc   ;==>_VK_accountsetOnline
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountsetOffline()
-; Description ...: Помечает текущего пользователя как offline.
+; Description ...: РџРѕРјРµС‡Р°РµС‚ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РєР°Рє offline.
 ; Syntax.........: _VK_accountsetOffline()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountsetOffline()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.setOffline.xml", "")
+	$sResponse = _VK_SendRequest("account.setOffline", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountsetOffline
@@ -5351,23 +5389,23 @@ EndFunc   ;==>_VK_accountsetOffline
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountlookupContacts()
-; Description ...: Позволяет искать пользователей <b>ВКонтакте</b>, используя телефонные номера, email-адреса, и идентификаторы пользователей в других сервисах. Найденные пользователи могут быть также в дальнейшем получены методом friends.getSuggestions.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РёСЃРєР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ <b>Р’РљРѕРЅС‚Р°РєС‚Рµ</b>, РёСЃРїРѕР»СЊР·СѓСЏ С‚РµР»РµС„РѕРЅРЅС‹Рµ РЅРѕРјРµСЂР°, email-Р°РґСЂРµСЃР°, Рё РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РІ РґСЂСѓРіРёС… СЃРµСЂРІРёСЃР°С…. РќР°Р№РґРµРЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РјРѕРіСѓС‚ Р±С‹С‚СЊ С‚Р°РєР¶Рµ РІ РґР°Р»СЊРЅРµР№С€РµРј РїРѕР»СѓС‡РµРЅС‹ РјРµС‚РѕРґРѕРј friends.getSuggestions.
 ; Syntax.........: _VK_accountlookupContacts()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountlookupContacts()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.lookupContacts.xml", "")
+	$sResponse = _VK_SendRequest("account.lookupContacts", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountlookupContacts
@@ -5376,23 +5414,23 @@ EndFunc   ;==>_VK_accountlookupContacts
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountregisterDevice()
-; Description ...: Подписывает устройство на базе iOS, Android или Windows Phone на получение Push-уведомлений.
+; Description ...: РџРѕРґРїРёСЃС‹РІР°РµС‚ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ РЅР° Р±Р°Р·Рµ iOS, Android РёР»Рё Windows Phone РЅР° РїРѕР»СѓС‡РµРЅРёРµ Push-СѓРІРµРґРѕРјР»РµРЅРёР№.
 ; Syntax.........: _VK_accountregisterDevice()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountregisterDevice()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.registerDevice.xml", "")
+	$sResponse = _VK_SendRequest("account.registerDevice", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountregisterDevice
@@ -5401,23 +5439,23 @@ EndFunc   ;==>_VK_accountregisterDevice
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountunregisterDevice()
-; Description ...: Отписывает устройство от Push уведомлений.
+; Description ...: РћС‚РїРёСЃС‹РІР°РµС‚ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ РѕС‚ Push СѓРІРµРґРѕРјР»РµРЅРёР№.
 ; Syntax.........: _VK_accountunregisterDevice()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountunregisterDevice()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.unregisterDevice.xml", "")
+	$sResponse = _VK_SendRequest("account.unregisterDevice", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountunregisterDevice
@@ -5426,23 +5464,23 @@ EndFunc   ;==>_VK_accountunregisterDevice
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountsetSilenceMode()
-; Description ...: Отключает push-уведомления на заданный промежуток времени.
+; Description ...: РћС‚РєР»СЋС‡Р°РµС‚ push-СѓРІРµРґРѕРјР»РµРЅРёСЏ РЅР° Р·Р°РґР°РЅРЅС‹Р№ РїСЂРѕРјРµР¶СѓС‚РѕРє РІСЂРµРјРµРЅРё.
 ; Syntax.........: _VK_accountsetSilenceMode()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountsetSilenceMode()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.setSilenceMode.xml", "")
+	$sResponse = _VK_SendRequest("account.setSilenceMode", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountsetSilenceMode
@@ -5451,23 +5489,23 @@ EndFunc   ;==>_VK_accountsetSilenceMode
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountgetPushSettings()
-; Description ...: Позволяет получать настройки Push уведомлений.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР»СѓС‡Р°С‚СЊ РЅР°СЃС‚СЂРѕР№РєРё Push СѓРІРµРґРѕРјР»РµРЅРёР№.
 ; Syntax.........: _VK_accountgetPushSettings()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountgetPushSettings()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.getPushSettings.xml", "")
+	$sResponse = _VK_SendRequest("account.getPushSettings", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountgetPushSettings
@@ -5476,23 +5514,23 @@ EndFunc   ;==>_VK_accountgetPushSettings
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountsetPushSettings()
-; Description ...: Изменяет настройку Push-уведомлений.
+; Description ...: РР·РјРµРЅСЏРµС‚ РЅР°СЃС‚СЂРѕР№РєСѓ Push-СѓРІРµРґРѕРјР»РµРЅРёР№.
 ; Syntax.........: _VK_accountsetPushSettings()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountsetPushSettings()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.setPushSettings.xml", "")
+	$sResponse = _VK_SendRequest("account.setPushSettings", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountsetPushSettings
@@ -5501,23 +5539,23 @@ EndFunc   ;==>_VK_accountsetPushSettings
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountgetAppPermissions()
-; Description ...: Получает настройки текущего пользователя в данном приложении.
+; Description ...: РџРѕР»СѓС‡Р°РµС‚ РЅР°СЃС‚СЂРѕР№РєРё С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ РґР°РЅРЅРѕРј РїСЂРёР»РѕР¶РµРЅРёРё.
 ; Syntax.........: _VK_accountgetAppPermissions()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountgetAppPermissions()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.getAppPermissions.xml", "")
+	$sResponse = _VK_SendRequest("account.getAppPermissions", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountgetAppPermissions
@@ -5526,23 +5564,23 @@ EndFunc   ;==>_VK_accountgetAppPermissions
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountgetActiveOffers()
-; Description ...: Возвращает список активных рекламных предложений (офферов), выполнив которые пользователь сможет получить соответствующее количество голосов на свой счёт внутри приложения.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р°РєС‚РёРІРЅС‹С… СЂРµРєР»Р°РјРЅС‹С… РїСЂРµРґР»РѕР¶РµРЅРёР№ (РѕС„С„РµСЂРѕРІ), РІС‹РїРѕР»РЅРёРІ РєРѕС‚РѕСЂС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃРјРѕР¶РµС‚ РїРѕР»СѓС‡РёС‚СЊ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РµРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РіРѕР»РѕСЃРѕРІ РЅР° СЃРІРѕР№ СЃС‡С‘С‚ РІРЅСѓС‚СЂРё РїСЂРёР»РѕР¶РµРЅРёСЏ.
 ; Syntax.........: _VK_accountgetActiveOffers()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountgetActiveOffers()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.getActiveOffers.xml", "")
+	$sResponse = _VK_SendRequest("account.getActiveOffers", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountgetActiveOffers
@@ -5551,23 +5589,23 @@ EndFunc   ;==>_VK_accountgetActiveOffers
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountbanUser()
-; Description ...: Добавляет пользователя в черный список.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ С‡РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє.
 ; Syntax.........: _VK_accountbanUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountbanUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.banUser.xml", "")
+	$sResponse = _VK_SendRequest("account.banUser", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountbanUser
@@ -5576,23 +5614,23 @@ EndFunc   ;==>_VK_accountbanUser
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountunbanUser()
-; Description ...: Убирает пользователя из черного списка.
+; Description ...: РЈР±РёСЂР°РµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· С‡РµСЂРЅРѕРіРѕ СЃРїРёСЃРєР°.
 ; Syntax.........: _VK_accountunbanUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountunbanUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.unbanUser.xml", "")
+	$sResponse = _VK_SendRequest("account.unbanUser", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountunbanUser
@@ -5601,23 +5639,23 @@ EndFunc   ;==>_VK_accountunbanUser
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountgetBanned()
-; Description ...: Возвращает список пользователей, находящихся в черном списке.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РЅР°С…РѕРґСЏС‰РёС…СЃСЏ РІ С‡РµСЂРЅРѕРј СЃРїРёСЃРєРµ.
 ; Syntax.........: _VK_accountgetBanned()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountgetBanned()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.getBanned.xml", "")
+	$sResponse = _VK_SendRequest("account.getBanned", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountgetBanned
@@ -5626,23 +5664,23 @@ EndFunc   ;==>_VK_accountgetBanned
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountgetInfo()
-; Description ...: Возвращает информацию о текущем аккаунте.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РµРєСѓС‰РµРј Р°РєРєР°СѓРЅС‚Рµ.
 ; Syntax.........: _VK_accountgetInfo()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountgetInfo()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.getInfo.xml", "")
+	$sResponse = _VK_SendRequest("account.getInfo", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountgetInfo
@@ -5651,23 +5689,23 @@ EndFunc   ;==>_VK_accountgetInfo
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountsetInfo()
-; Description ...: Позволяет редактировать информацию о текущем аккаунте.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РµРєСѓС‰РµРј Р°РєРєР°СѓРЅС‚Рµ.
 ; Syntax.........: _VK_accountsetInfo()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountsetInfo()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.setInfo.xml", "")
+	$sResponse = _VK_SendRequest("account.setInfo", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountsetInfo
@@ -5676,23 +5714,23 @@ EndFunc   ;==>_VK_accountsetInfo
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountchangePassword()
-; Description ...: Позволяет сменить пароль пользователя после успешного восстановления доступа к аккаунту через СМС, используя метод auth.restore.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЃРјРµРЅРёС‚СЊ РїР°СЂРѕР»СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕРіРѕ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ РґРѕСЃС‚СѓРїР° Рє Р°РєРєР°СѓРЅС‚Сѓ С‡РµСЂРµР· РЎРњРЎ, РёСЃРїРѕР»СЊР·СѓСЏ РјРµС‚РѕРґ auth.restore.
 ; Syntax.........: _VK_accountchangePassword()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountchangePassword()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.changePassword.xml", "")
+	$sResponse = _VK_SendRequest("account.changePassword", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountchangePassword
@@ -5701,23 +5739,23 @@ EndFunc   ;==>_VK_accountchangePassword
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountgetProfileInfo()
-; Description ...: Возвращает информацию о текущем профиле.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РµРєСѓС‰РµРј РїСЂРѕС„РёР»Рµ.
 ; Syntax.........: _VK_accountgetProfileInfo()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountgetProfileInfo()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.getProfileInfo.xml", "")
+	$sResponse = _VK_SendRequest("account.getProfileInfo", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountgetProfileInfo
@@ -5726,23 +5764,23 @@ EndFunc   ;==>_VK_accountgetProfileInfo
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_accountsaveProfileInfo()
-; Description ...: Редактирует информацию текущего профиля.
+; Description ...: Р РµРґР°РєС‚РёСЂСѓРµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ С‚РµРєСѓС‰РµРіРѕ РїСЂРѕС„РёР»СЏ.
 ; Syntax.........: _VK_accountsaveProfileInfo()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_accountsaveProfileInfo()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("account.saveProfileInfo.xml", "")
+	$sResponse = _VK_SendRequest("account.saveProfileInfo", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_accountsaveProfileInfo
@@ -5753,23 +5791,23 @@ EndFunc   ;==>_VK_accountsaveProfileInfo
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesget()
-; Description ...: Возвращает список входящих либо исходящих личных сообщений текущего пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РІС…РѕРґСЏС‰РёС… Р»РёР±Рѕ РёСЃС…РѕРґСЏС‰РёС… Р»РёС‡РЅС‹С… СЃРѕРѕР±С‰РµРЅРёР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_messagesget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.get.xml", "")
+	$sResponse = _VK_SendRequest("messages.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesget
@@ -5778,23 +5816,23 @@ EndFunc   ;==>_VK_messagesget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesgetDialogs()
-; Description ...: Возвращает список диалогов текущего пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РґРёР°Р»РѕРіРѕРІ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_messagesgetDialogs()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesgetDialogs()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.getDialogs.xml", "")
+	$sResponse = _VK_SendRequest("messages.getDialogs", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesgetDialogs
@@ -5803,23 +5841,23 @@ EndFunc   ;==>_VK_messagesgetDialogs
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesgetById()
-; Description ...: Возвращает сообщения по их <b>id</b>.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРѕРѕР±С‰РµРЅРёСЏ РїРѕ РёС… <b>id</b>.
 ; Syntax.........: _VK_messagesgetById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.getById.xml", "")
+	$sResponse = _VK_SendRequest("messages.getById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesgetById
@@ -5828,23 +5866,23 @@ EndFunc   ;==>_VK_messagesgetById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagessearch()
-; Description ...:   <div class="dev_methods_list_desc fl_l">Возвращает список найденных личных сообщений текущего пользователя по введенной строке поиска.
+; Description ...:   <div class="dev_methods_list_desc fl_l">Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РЅР°Р№РґРµРЅРЅС‹С… Р»РёС‡РЅС‹С… СЃРѕРѕР±С‰РµРЅРёР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕ РІРІРµРґРµРЅРЅРѕР№ СЃС‚СЂРѕРєРµ РїРѕРёСЃРєР°.
 ; Syntax.........: _VK_messagessearch()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagessearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.search.xml", "")
+	$sResponse = _VK_SendRequest("messages.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagessearch
@@ -5853,23 +5891,23 @@ EndFunc   ;==>_VK_messagessearch
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesgetHistory()
-; Description ...: Возвращает историю сообщений для указанного пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёСЃС‚РѕСЂРёСЋ СЃРѕРѕР±С‰РµРЅРёР№ РґР»СЏ СѓРєР°Р·Р°РЅРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_messagesgetHistory()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesgetHistory()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.getHistory.xml", "")
+	$sResponse = _VK_SendRequest("messages.getHistory", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesgetHistory
@@ -5878,23 +5916,23 @@ EndFunc   ;==>_VK_messagesgetHistory
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagessend()
-; Description ...: Отправляет сообщение.
+; Description ...: РћС‚РїСЂР°РІР»СЏРµС‚ СЃРѕРѕР±С‰РµРЅРёРµ.
 ; Syntax.........: _VK_messagessend()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagessend()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.send.xml", "")
+	$sResponse = _VK_SendRequest("messages.send", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagessend
@@ -5903,23 +5941,23 @@ EndFunc   ;==>_VK_messagessend
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesdelete()
-; Description ...: Удаляет сообщение.
+; Description ...: РЈРґР°Р»СЏРµС‚ СЃРѕРѕР±С‰РµРЅРёРµ.
 ; Syntax.........: _VK_messagesdelete()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.delete.xml", "")
+	$sResponse = _VK_SendRequest("messages.delete", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesdelete
@@ -5928,23 +5966,23 @@ EndFunc   ;==>_VK_messagesdelete
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesdeleteDialog()
-; Description ...: Удаляет все личные сообщения в диалоге.
+; Description ...: РЈРґР°Р»СЏРµС‚ РІСЃРµ Р»РёС‡РЅС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ РІ РґРёР°Р»РѕРіРµ.
 ; Syntax.........: _VK_messagesdeleteDialog()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesdeleteDialog()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.deleteDialog.xml", "")
+	$sResponse = _VK_SendRequest("messages.deleteDialog", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesdeleteDialog
@@ -5953,23 +5991,23 @@ EndFunc   ;==>_VK_messagesdeleteDialog
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesrestore()
-; Description ...: Восстанавливает удаленное сообщение.
+; Description ...: Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СѓРґР°Р»РµРЅРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ.
 ; Syntax.........: _VK_messagesrestore()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesrestore()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.restore.xml", "")
+	$sResponse = _VK_SendRequest("messages.restore", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesrestore
@@ -5978,23 +6016,23 @@ EndFunc   ;==>_VK_messagesrestore
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesmarkAsRead()
-; Description ...: Помечает сообщения как прочитанные.
+; Description ...: РџРѕРјРµС‡Р°РµС‚ СЃРѕРѕР±С‰РµРЅРёСЏ РєР°Рє РїСЂРѕС‡РёС‚Р°РЅРЅС‹Рµ.
 ; Syntax.........: _VK_messagesmarkAsRead()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesmarkAsRead()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.markAsRead.xml", "")
+	$sResponse = _VK_SendRequest("messages.markAsRead", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesmarkAsRead
@@ -6003,23 +6041,23 @@ EndFunc   ;==>_VK_messagesmarkAsRead
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesmarkAsImportant()
-; Description ...:   <div class="dev_methods_list_desc fl_l">Помечает сообщения как важные либо снимает отметку.
+; Description ...:   <div class="dev_methods_list_desc fl_l">РџРѕРјРµС‡Р°РµС‚ СЃРѕРѕР±С‰РµРЅРёСЏ РєР°Рє РІР°Р¶РЅС‹Рµ Р»РёР±Рѕ СЃРЅРёРјР°РµС‚ РѕС‚РјРµС‚РєСѓ.
 ; Syntax.........: _VK_messagesmarkAsImportant()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesmarkAsImportant()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.markAsImportant.xml", "")
+	$sResponse = _VK_SendRequest("messages.markAsImportant", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesmarkAsImportant
@@ -6028,23 +6066,23 @@ EndFunc   ;==>_VK_messagesmarkAsImportant
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesgetLongPollServer()
-; Description ...: Возвращает данные, необходимые для подключения к Long Poll серверу.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РґР°РЅРЅС‹Рµ, РЅРµРѕР±С…РѕРґРёРјС‹Рµ РґР»СЏ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє Long Poll СЃРµСЂРІРµСЂСѓ.
 ; Syntax.........: _VK_messagesgetLongPollServer()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesgetLongPollServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.getLongPollServer.xml", "")
+	$sResponse = _VK_SendRequest("messages.getLongPollServer", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesgetLongPollServer
@@ -6053,23 +6091,23 @@ EndFunc   ;==>_VK_messagesgetLongPollServer
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesgetLongPollHistory()
-; Description ...: Возвращает обновления в личных сообщениях пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РѕР±РЅРѕРІР»РµРЅРёСЏ РІ Р»РёС‡РЅС‹С… СЃРѕРѕР±С‰РµРЅРёСЏС… РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_messagesgetLongPollHistory()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesgetLongPollHistory()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.getLongPollHistory.xml", "")
+	$sResponse = _VK_SendRequest("messages.getLongPollHistory", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesgetLongPollHistory
@@ -6078,23 +6116,23 @@ EndFunc   ;==>_VK_messagesgetLongPollHistory
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesgetChat()
-; Description ...: Возвращает информацию о беседе.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ Р±РµСЃРµРґРµ.
 ; Syntax.........: _VK_messagesgetChat()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesgetChat()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.getChat.xml", "")
+	$sResponse = _VK_SendRequest("messages.getChat", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesgetChat
@@ -6103,23 +6141,23 @@ EndFunc   ;==>_VK_messagesgetChat
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagescreateChat()
-; Description ...: Создаёт беседу с несколькими участниками.
+; Description ...: РЎРѕР·РґР°С‘С‚ Р±РµСЃРµРґСѓ СЃ РЅРµСЃРєРѕР»СЊРєРёРјРё СѓС‡Р°СЃС‚РЅРёРєР°РјРё.
 ; Syntax.........: _VK_messagescreateChat()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagescreateChat()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.createChat.xml", "")
+	$sResponse = _VK_SendRequest("messages.createChat", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagescreateChat
@@ -6128,23 +6166,23 @@ EndFunc   ;==>_VK_messagescreateChat
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messageseditChat()
-; Description ...: Изменяет название беседы.
+; Description ...: РР·РјРµРЅСЏРµС‚ РЅР°Р·РІР°РЅРёРµ Р±РµСЃРµРґС‹.
 ; Syntax.........: _VK_messageseditChat()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messageseditChat()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.editChat.xml", "")
+	$sResponse = _VK_SendRequest("messages.editChat", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messageseditChat
@@ -6153,23 +6191,23 @@ EndFunc   ;==>_VK_messageseditChat
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesgetChatUsers()
-; Description ...: Позволяет получить список пользователей мультидиалога по его <b>id</b>.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РїРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РјСѓР»СЊС‚РёРґРёР°Р»РѕРіР° РїРѕ РµРіРѕ <b>id</b>.
 ; Syntax.........: _VK_messagesgetChatUsers()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesgetChatUsers()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.getChatUsers.xml", "")
+	$sResponse = _VK_SendRequest("messages.getChatUsers", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesgetChatUsers
@@ -6178,23 +6216,23 @@ EndFunc   ;==>_VK_messagesgetChatUsers
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagessetActivity()
-; Description ...: Изменяет статус набора текста пользователем в диалоге.
+; Description ...: РР·РјРµРЅСЏРµС‚ СЃС‚Р°С‚СѓСЃ РЅР°Р±РѕСЂР° С‚РµРєСЃС‚Р° РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј РІ РґРёР°Р»РѕРіРµ.
 ; Syntax.........: _VK_messagessetActivity()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagessetActivity()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.setActivity.xml", "")
+	$sResponse = _VK_SendRequest("messages.setActivity", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagessetActivity
@@ -6203,23 +6241,23 @@ EndFunc   ;==>_VK_messagessetActivity
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagessearchDialogs()
-; Description ...: Возвращает список найденных диалогов текущего пользователя по введенной строке поиска.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РЅР°Р№РґРµРЅРЅС‹С… РґРёР°Р»РѕРіРѕРІ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕ РІРІРµРґРµРЅРЅРѕР№ СЃС‚СЂРѕРєРµ РїРѕРёСЃРєР°.
 ; Syntax.........: _VK_messagessearchDialogs()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagessearchDialogs()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.searchDialogs.xml", "")
+	$sResponse = _VK_SendRequest("messages.searchDialogs", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagessearchDialogs
@@ -6228,23 +6266,23 @@ EndFunc   ;==>_VK_messagessearchDialogs
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesaddChatUser()
-; Description ...: Добавляет в мультидиалог нового пользователя.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РІ РјСѓР»СЊС‚РёРґРёР°Р»РѕРі РЅРѕРІРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_messagesaddChatUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesaddChatUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.addChatUser.xml", "")
+	$sResponse = _VK_SendRequest("messages.addChatUser", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesaddChatUser
@@ -6253,23 +6291,23 @@ EndFunc   ;==>_VK_messagesaddChatUser
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesremoveChatUser()
-; Description ...: Исключает из мультидиалога пользователя, если текущий пользователь был создателем беседы либо пригласил исключаемого пользователя.
+; Description ...: РСЃРєР»СЋС‡Р°РµС‚ РёР· РјСѓР»СЊС‚РёРґРёР°Р»РѕРіР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ, РµСЃР»Рё С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ Р±С‹Р» СЃРѕР·РґР°С‚РµР»РµРј Р±РµСЃРµРґС‹ Р»РёР±Рѕ РїСЂРёРіР»Р°СЃРёР» РёСЃРєР»СЋС‡Р°РµРјРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_messagesremoveChatUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesremoveChatUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.removeChatUser.xml", "")
+	$sResponse = _VK_SendRequest("messages.removeChatUser", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesremoveChatUser
@@ -6278,23 +6316,23 @@ EndFunc   ;==>_VK_messagesremoveChatUser
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesgetLastActivity()
-; Description ...: Возвращает текущий статус и дату последней активности указанного пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ С‚РµРєСѓС‰РёР№ СЃС‚Р°С‚СѓСЃ Рё РґР°С‚Сѓ РїРѕСЃР»РµРґРЅРµР№ Р°РєС‚РёРІРЅРѕСЃС‚Рё СѓРєР°Р·Р°РЅРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_messagesgetLastActivity()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesgetLastActivity()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.getLastActivity.xml", "")
+	$sResponse = _VK_SendRequest("messages.getLastActivity", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesgetLastActivity
@@ -6303,23 +6341,23 @@ EndFunc   ;==>_VK_messagesgetLastActivity
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagessetChatPhoto()
-; Description ...: Позволяет установить фотографию мультидиалога, загруженную с помощью метода photos.getChatUploadServer.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ С„РѕС‚РѕРіСЂР°С„РёСЋ РјСѓР»СЊС‚РёРґРёР°Р»РѕРіР°, Р·Р°РіСЂСѓР¶РµРЅРЅСѓСЋ СЃ РїРѕРјРѕС‰СЊСЋ РјРµС‚РѕРґР° photos.getChatUploadServer.
 ; Syntax.........: _VK_messagessetChatPhoto()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagessetChatPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.setChatPhoto.xml", "")
+	$sResponse = _VK_SendRequest("messages.setChatPhoto", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagessetChatPhoto
@@ -6328,23 +6366,23 @@ EndFunc   ;==>_VK_messagessetChatPhoto
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_messagesdeleteChatPhoto()
-; Description ...: Позволяет удалить фотографию мультидиалога.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СѓРґР°Р»РёС‚СЊ С„РѕС‚РѕРіСЂР°С„РёСЋ РјСѓР»СЊС‚РёРґРёР°Р»РѕРіР°.
 ; Syntax.........: _VK_messagesdeleteChatPhoto()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_messagesdeleteChatPhoto()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("messages.deleteChatPhoto.xml", "")
+	$sResponse = _VK_SendRequest("messages.deleteChatPhoto", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_messagesdeleteChatPhoto
@@ -6355,23 +6393,23 @@ EndFunc   ;==>_VK_messagesdeleteChatPhoto
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedget()
-; Description ...: Возвращает данные, необходимые для показа списка новостей для текущего пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РґР°РЅРЅС‹Рµ, РЅРµРѕР±С…РѕРґРёРјС‹Рµ РґР»СЏ РїРѕРєР°Р·Р° СЃРїРёСЃРєР° РЅРѕРІРѕСЃС‚РµР№ РґР»СЏ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_newsfeedget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.get.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedget
@@ -6380,23 +6418,23 @@ EndFunc   ;==>_VK_newsfeedget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedgetRecommended()
-; Description ...: Получает список новостей, рекомендованных пользователю.
+; Description ...: РџРѕР»СѓС‡Р°РµС‚ СЃРїРёСЃРѕРє РЅРѕРІРѕСЃС‚РµР№, СЂРµРєРѕРјРµРЅРґРѕРІР°РЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ.
 ; Syntax.........: _VK_newsfeedgetRecommended()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedgetRecommended()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.getRecommended.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.getRecommended", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedgetRecommended
@@ -6405,23 +6443,23 @@ EndFunc   ;==>_VK_newsfeedgetRecommended
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedgetComments()
-; Description ...: Возвращает данные, необходимые для показа раздела комментариев в новостях пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РґР°РЅРЅС‹Рµ, РЅРµРѕР±С…РѕРґРёРјС‹Рµ РґР»СЏ РїРѕРєР°Р·Р° СЂР°Р·РґРµР»Р° РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ РІ РЅРѕРІРѕСЃС‚СЏС… РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_newsfeedgetComments()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedgetComments()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.getComments.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.getComments", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedgetComments
@@ -6430,23 +6468,23 @@ EndFunc   ;==>_VK_newsfeedgetComments
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedgetMentions()
-; Description ...: Возвращает список записей пользователей на своих стенах, в которых упоминается указанный пользователь.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє Р·Р°РїРёСЃРµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РЅР° СЃРІРѕРёС… СЃС‚РµРЅР°С…, РІ РєРѕС‚РѕСЂС‹С… СѓРїРѕРјРёРЅР°РµС‚СЃСЏ СѓРєР°Р·Р°РЅРЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ.
 ; Syntax.........: _VK_newsfeedgetMentions()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedgetMentions()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.getMentions.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.getMentions", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedgetMentions
@@ -6455,23 +6493,23 @@ EndFunc   ;==>_VK_newsfeedgetMentions
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedgetBanned()
-; Description ...: Возвращает список пользователей и групп, которые текущий пользователь скрыл из ленты новостей.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Рё РіСЂСѓРїРї, РєРѕС‚РѕСЂС‹Рµ С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃРєСЂС‹Р» РёР· Р»РµРЅС‚С‹ РЅРѕРІРѕСЃС‚РµР№.
 ; Syntax.........: _VK_newsfeedgetBanned()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedgetBanned()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.getBanned.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.getBanned", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedgetBanned
@@ -6480,23 +6518,23 @@ EndFunc   ;==>_VK_newsfeedgetBanned
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedaddBan()
-; Description ...: Запрещает показывать новости от заданных пользователей и групп в ленте новостей текущего пользователя.
+; Description ...: Р—Р°РїСЂРµС‰Р°РµС‚ РїРѕРєР°Р·С‹РІР°С‚СЊ РЅРѕРІРѕСЃС‚Рё РѕС‚ Р·Р°РґР°РЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Рё РіСЂСѓРїРї РІ Р»РµРЅС‚Рµ РЅРѕРІРѕСЃС‚РµР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_newsfeedaddBan()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedaddBan()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.addBan.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.addBan", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedaddBan
@@ -6505,23 +6543,23 @@ EndFunc   ;==>_VK_newsfeedaddBan
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeeddeleteBan()
-; Description ...: Разрешает показывать новости от заданных пользователей и групп в ленте новостей текущего пользователя.
+; Description ...: Р Р°Р·СЂРµС€Р°РµС‚ РїРѕРєР°Р·С‹РІР°С‚СЊ РЅРѕРІРѕСЃС‚Рё РѕС‚ Р·Р°РґР°РЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Рё РіСЂСѓРїРї РІ Р»РµРЅС‚Рµ РЅРѕРІРѕСЃС‚РµР№ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_newsfeeddeleteBan()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeeddeleteBan()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.deleteBan.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.deleteBan", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeeddeleteBan
@@ -6530,23 +6568,23 @@ EndFunc   ;==>_VK_newsfeeddeleteBan
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedignoreItem()
-; Description ...: Позволяет скрыть объект из ленты новостей.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЃРєСЂС‹С‚СЊ РѕР±СЉРµРєС‚ РёР· Р»РµРЅС‚С‹ РЅРѕРІРѕСЃС‚РµР№.
 ; Syntax.........: _VK_newsfeedignoreItem()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedignoreItem()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.ignoreItem.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.ignoreItem", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedignoreItem
@@ -6555,23 +6593,23 @@ EndFunc   ;==>_VK_newsfeedignoreItem
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedunignoreItem()
-; Description ...: Позволяет вернуть ранее скрытый объект в ленту новостей.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РІРµСЂРЅСѓС‚СЊ СЂР°РЅРµРµ СЃРєСЂС‹С‚С‹Р№ РѕР±СЉРµРєС‚ РІ Р»РµРЅС‚Сѓ РЅРѕРІРѕСЃС‚РµР№.
 ; Syntax.........: _VK_newsfeedunignoreItem()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedunignoreItem()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.unignoreItem.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.unignoreItem", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedunignoreItem
@@ -6580,23 +6618,23 @@ EndFunc   ;==>_VK_newsfeedunignoreItem
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedsearch()
-; Description ...: Возвращает результаты поиска по статусам. Новости возвращаются в порядке от более новых к более старым.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЂРµР·СѓР»СЊС‚Р°С‚С‹ РїРѕРёСЃРєР° РїРѕ СЃС‚Р°С‚СѓСЃР°Рј. РќРѕРІРѕСЃС‚Рё РІРѕР·РІСЂР°С‰Р°СЋС‚СЃСЏ РІ РїРѕСЂСЏРґРєРµ РѕС‚ Р±РѕР»РµРµ РЅРѕРІС‹С… Рє Р±РѕР»РµРµ СЃС‚Р°СЂС‹Рј.
 ; Syntax.........: _VK_newsfeedsearch()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedsearch()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.search.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.search", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedsearch
@@ -6605,23 +6643,23 @@ EndFunc   ;==>_VK_newsfeedsearch
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedgetLists()
-; Description ...: Возвращает пользовательские списки новостей.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ СЃРїРёСЃРєРё РЅРѕРІРѕСЃС‚РµР№.
 ; Syntax.........: _VK_newsfeedgetLists()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedgetLists()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.getLists.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.getLists", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedgetLists
@@ -6630,23 +6668,23 @@ EndFunc   ;==>_VK_newsfeedgetLists
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedsaveList()
-; Description ...: Метод позволяет создавать или редактировать пользовательские списки для просмотра новостей.
+; Description ...: РњРµС‚РѕРґ РїРѕР·РІРѕР»СЏРµС‚ СЃРѕР·РґР°РІР°С‚СЊ РёР»Рё СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ СЃРїРёСЃРєРё РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° РЅРѕРІРѕСЃС‚РµР№.
 ; Syntax.........: _VK_newsfeedsaveList()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedsaveList()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.saveList.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.saveList", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedsaveList
@@ -6655,23 +6693,23 @@ EndFunc   ;==>_VK_newsfeedsaveList
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeeddeleteList()
-; Description ...: Метод позволяет удалить пользовательский список новостей
+; Description ...: РњРµС‚РѕРґ РїРѕР·РІРѕР»СЏРµС‚ СѓРґР°Р»РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёР№ СЃРїРёСЃРѕРє РЅРѕРІРѕСЃС‚РµР№
 ; Syntax.........: _VK_newsfeeddeleteList()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeeddeleteList()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.deleteList.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.deleteList", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeeddeleteList
@@ -6680,23 +6718,23 @@ EndFunc   ;==>_VK_newsfeeddeleteList
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedunsubscribe()
-; Description ...: Отписывает текущего пользователя от комментариев к заданному объекту.
+; Description ...: РћС‚РїРёСЃС‹РІР°РµС‚ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РѕС‚ РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ Рє Р·Р°РґР°РЅРЅРѕРјСѓ РѕР±СЉРµРєС‚Сѓ.
 ; Syntax.........: _VK_newsfeedunsubscribe()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedunsubscribe()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.unsubscribe.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.unsubscribe", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedunsubscribe
@@ -6705,23 +6743,23 @@ EndFunc   ;==>_VK_newsfeedunsubscribe
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_newsfeedgetSuggestedSources()
-; Description ...: Возвращает сообщества и пользователей, на которые текущему пользователю рекомендуется подписаться.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРѕРѕР±С‰РµСЃС‚РІР° Рё РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РЅР° РєРѕС‚РѕСЂС‹Рµ С‚РµРєСѓС‰РµРјСѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ СЂРµРєРѕРјРµРЅРґСѓРµС‚СЃСЏ РїРѕРґРїРёСЃР°С‚СЊСЃСЏ.
 ; Syntax.........: _VK_newsfeedgetSuggestedSources()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_newsfeedgetSuggestedSources()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("newsfeed.getSuggestedSources.xml", "")
+	$sResponse = _VK_SendRequest("newsfeed.getSuggestedSources", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_newsfeedgetSuggestedSources
@@ -6732,23 +6770,23 @@ EndFunc   ;==>_VK_newsfeedgetSuggestedSources
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_likesgetList()
-; Description ...: Получает список идентификаторов пользователей, которые добавили заданный объект в свой список <b>Мне нравится</b>.
+; Description ...: РџРѕР»СѓС‡Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РєРѕС‚РѕСЂС‹Рµ РґРѕР±Р°РІРёР»Рё Р·Р°РґР°РЅРЅС‹Р№ РѕР±СЉРµРєС‚ РІ СЃРІРѕР№ СЃРїРёСЃРѕРє <b>РњРЅРµ РЅСЂР°РІРёС‚СЃСЏ</b>.
 ; Syntax.........: _VK_likesgetList()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_likesgetList()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("likes.getList.xml", "")
+	$sResponse = _VK_SendRequest("likes.getList", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_likesgetList
@@ -6757,23 +6795,23 @@ EndFunc   ;==>_VK_likesgetList
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_likesadd()
-; Description ...: Добавляет указанный объект в список <b>Мне нравится</b> текущего пользователя.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ СѓРєР°Р·Р°РЅРЅС‹Р№ РѕР±СЉРµРєС‚ РІ СЃРїРёСЃРѕРє <b>РњРЅРµ РЅСЂР°РІРёС‚СЃСЏ</b> С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_likesadd()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_likesadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("likes.add.xml", "")
+	$sResponse = _VK_SendRequest("likes.add", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_likesadd
@@ -6782,23 +6820,23 @@ EndFunc   ;==>_VK_likesadd
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_likesdelete()
-; Description ...: Удаляет указанный объект из списка <b>Мне нравится</b> текущего пользователя
+; Description ...: РЈРґР°Р»СЏРµС‚ СѓРєР°Р·Р°РЅРЅС‹Р№ РѕР±СЉРµРєС‚ РёР· СЃРїРёСЃРєР° <b>РњРЅРµ РЅСЂР°РІРёС‚СЃСЏ</b> С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
 ; Syntax.........: _VK_likesdelete()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_likesdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("likes.delete.xml", "")
+	$sResponse = _VK_SendRequest("likes.delete", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_likesdelete
@@ -6807,23 +6845,23 @@ EndFunc   ;==>_VK_likesdelete
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_likesisLiked()
-; Description ...: Проверяет, находится ли объект в списке <b>Мне нравится</b> заданного пользователя.
+; Description ...: РџСЂРѕРІРµСЂСЏРµС‚, РЅР°С…РѕРґРёС‚СЃСЏ Р»Рё РѕР±СЉРµРєС‚ РІ СЃРїРёСЃРєРµ <b>РњРЅРµ РЅСЂР°РІРёС‚СЃСЏ</b> Р·Р°РґР°РЅРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_likesisLiked()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_likesisLiked()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("likes.isLiked.xml", "")
+	$sResponse = _VK_SendRequest("likes.isLiked", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_likesisLiked
@@ -6834,23 +6872,23 @@ EndFunc   ;==>_VK_likesisLiked
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pollsgetById()
-; Description ...: Возвращает детальную информацию об опросе по его идентификатору.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РґРµС‚Р°Р»СЊРЅСѓСЋ РёРЅС„РѕСЂРјР°С†РёСЋ РѕР± РѕРїСЂРѕСЃРµ РїРѕ РµРіРѕ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂСѓ.
 ; Syntax.........: _VK_pollsgetById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pollsgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("polls.getById.xml", "")
+	$sResponse = _VK_SendRequest("polls.getById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pollsgetById
@@ -6859,23 +6897,23 @@ EndFunc   ;==>_VK_pollsgetById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pollsaddVote()
-; Description ...: Отдает голос текущего пользователя за выбранный вариант ответа в указанном опросе.
+; Description ...: РћС‚РґР°РµС‚ РіРѕР»РѕСЃ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Р·Р° РІС‹Р±СЂР°РЅРЅС‹Р№ РІР°СЂРёР°РЅС‚ РѕС‚РІРµС‚Р° РІ СѓРєР°Р·Р°РЅРЅРѕРј РѕРїСЂРѕСЃРµ.
 ; Syntax.........: _VK_pollsaddVote()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pollsaddVote()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("polls.addVote.xml", "")
+	$sResponse = _VK_SendRequest("polls.addVote", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pollsaddVote
@@ -6884,23 +6922,23 @@ EndFunc   ;==>_VK_pollsaddVote
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pollsdeleteVote()
-; Description ...: Снимает голос текущего пользователя с выбранного варианта ответа в указанном опросе.
+; Description ...: РЎРЅРёРјР°РµС‚ РіРѕР»РѕСЃ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РІР°СЂРёР°РЅС‚Р° РѕС‚РІРµС‚Р° РІ СѓРєР°Р·Р°РЅРЅРѕРј РѕРїСЂРѕСЃРµ.
 ; Syntax.........: _VK_pollsdeleteVote()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pollsdeleteVote()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("polls.deleteVote.xml", "")
+	$sResponse = _VK_SendRequest("polls.deleteVote", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pollsdeleteVote
@@ -6909,23 +6947,23 @@ EndFunc   ;==>_VK_pollsdeleteVote
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pollsgetVoters()
-; Description ...: Получает список идентификаторов пользователей, которые выбрали определенные варианты ответа в опросе.
+; Description ...: РџРѕР»СѓС‡Р°РµС‚ СЃРїРёСЃРѕРє РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РєРѕС‚РѕСЂС‹Рµ РІС‹Р±СЂР°Р»Рё РѕРїСЂРµРґРµР»РµРЅРЅС‹Рµ РІР°СЂРёР°РЅС‚С‹ РѕС‚РІРµС‚Р° РІ РѕРїСЂРѕСЃРµ.
 ; Syntax.........: _VK_pollsgetVoters()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pollsgetVoters()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("polls.getVoters.xml", "")
+	$sResponse = _VK_SendRequest("polls.getVoters", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pollsgetVoters
@@ -6934,23 +6972,23 @@ EndFunc   ;==>_VK_pollsgetVoters
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pollscreate()
-; Description ...: Позволяет создавать опросы, которые впоследствии можно прикреплять к записям на странице пользователя или сообщества.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЃРѕР·РґР°РІР°С‚СЊ РѕРїСЂРѕСЃС‹, РєРѕС‚РѕСЂС‹Рµ РІРїРѕСЃР»РµРґСЃС‚РІРёРё РјРѕР¶РЅРѕ РїСЂРёРєСЂРµРїР»СЏС‚СЊ Рє Р·Р°РїРёСЃСЏРј РЅР° СЃС‚СЂР°РЅРёС†Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_pollscreate()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pollscreate()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("polls.create.xml", "")
+	$sResponse = _VK_SendRequest("polls.create", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pollscreate
@@ -6959,23 +6997,23 @@ EndFunc   ;==>_VK_pollscreate
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_pollsedit()
-; Description ...: Позволяет редактировать созданные опросы.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ СЃРѕР·РґР°РЅРЅС‹Рµ РѕРїСЂРѕСЃС‹.
 ; Syntax.........: _VK_pollsedit()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_pollsedit()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("polls.edit.xml", "")
+	$sResponse = _VK_SendRequest("polls.edit", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_pollsedit
@@ -6986,23 +7024,23 @@ EndFunc   ;==>_VK_pollsedit
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_docsget()
-; Description ...: Возвращает расширенную информацию о документах пользователя или сообщества.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЂР°СЃС€РёСЂРµРЅРЅСѓСЋ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РґРѕРєСѓРјРµРЅС‚Р°С… РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё СЃРѕРѕР±С‰РµСЃС‚РІР°.
 ; Syntax.........: _VK_docsget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_docsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("docs.get.xml", "")
+	$sResponse = _VK_SendRequest("docs.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_docsget
@@ -7011,23 +7049,23 @@ EndFunc   ;==>_VK_docsget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_docsgetById()
-; Description ...: Возвращает информацию о документах по их идентификаторам.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РґРѕРєСѓРјРµРЅС‚Р°С… РїРѕ РёС… РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР°Рј.
 ; Syntax.........: _VK_docsgetById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_docsgetById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("docs.getById.xml", "")
+	$sResponse = _VK_SendRequest("docs.getById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_docsgetById
@@ -7036,23 +7074,23 @@ EndFunc   ;==>_VK_docsgetById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_docsgetUploadServer()
-; Description ...: Возвращает адрес сервера для загрузки документов.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР° РґР»СЏ Р·Р°РіСЂСѓР·РєРё РґРѕРєСѓРјРµРЅС‚РѕРІ.
 ; Syntax.........: _VK_docsgetUploadServer()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_docsgetUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("docs.getUploadServer.xml", "")
+	$sResponse = _VK_SendRequest("docs.getUploadServer", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_docsgetUploadServer
@@ -7061,23 +7099,23 @@ EndFunc   ;==>_VK_docsgetUploadServer
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_docsgetWallUploadServer()
-; Description ...: Возвращает адрес сервера для загрузки документов в папку <b>Отправленные</b>, для последующей отправки документа на стену или личным сообщением.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР° РґР»СЏ Р·Р°РіСЂСѓР·РєРё РґРѕРєСѓРјРµРЅС‚РѕРІ РІ РїР°РїРєСѓ <b>РћС‚РїСЂР°РІР»РµРЅРЅС‹Рµ</b>, РґР»СЏ РїРѕСЃР»РµРґСѓСЋС‰РµР№ РѕС‚РїСЂР°РІРєРё РґРѕРєСѓРјРµРЅС‚Р° РЅР° СЃС‚РµРЅСѓ РёР»Рё Р»РёС‡РЅС‹Рј СЃРѕРѕР±С‰РµРЅРёРµРј.
 ; Syntax.........: _VK_docsgetWallUploadServer()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_docsgetWallUploadServer()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("docs.getWallUploadServer.xml", "")
+	$sResponse = _VK_SendRequest("docs.getWallUploadServer", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_docsgetWallUploadServer
@@ -7086,23 +7124,23 @@ EndFunc   ;==>_VK_docsgetWallUploadServer
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_docssave()
-; Description ...: Сохраняет документ после его успешной загрузки на сервер.
+; Description ...: РЎРѕС…СЂР°РЅСЏРµС‚ РґРѕРєСѓРјРµРЅС‚ РїРѕСЃР»Рµ РµРіРѕ СѓСЃРїРµС€РЅРѕР№ Р·Р°РіСЂСѓР·РєРё РЅР° СЃРµСЂРІРµСЂ.
 ; Syntax.........: _VK_docssave()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_docssave()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("docs.save.xml", "")
+	$sResponse = _VK_SendRequest("docs.save", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_docssave
@@ -7111,23 +7149,23 @@ EndFunc   ;==>_VK_docssave
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_docsdelete()
-; Description ...: Удаляет документ пользователя или группы.
+; Description ...: РЈРґР°Р»СЏРµС‚ РґРѕРєСѓРјРµРЅС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР»Рё РіСЂСѓРїРїС‹.
 ; Syntax.........: _VK_docsdelete()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_docsdelete()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("docs.delete.xml", "")
+	$sResponse = _VK_SendRequest("docs.delete", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_docsdelete
@@ -7136,23 +7174,23 @@ EndFunc   ;==>_VK_docsdelete
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_docsadd()
-; Description ...: Копирует документ в документы текущего пользователя.
+; Description ...: РљРѕРїРёСЂСѓРµС‚ РґРѕРєСѓРјРµРЅС‚ РІ РґРѕРєСѓРјРµРЅС‚С‹ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_docsadd()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_docsadd()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("docs.add.xml", "")
+	$sResponse = _VK_SendRequest("docs.add", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_docsadd
@@ -7163,23 +7201,23 @@ EndFunc   ;==>_VK_docsadd
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_favegetUsers()
-; Description ...: Возвращает список пользователей, добавленных текущим пользователем в закладки.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РґРѕР±Р°РІР»РµРЅРЅС‹С… С‚РµРєСѓС‰РёРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј РІ Р·Р°РєР»Р°РґРєРё.
 ; Syntax.........: _VK_favegetUsers()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_favegetUsers()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.getUsers.xml", "")
+	$sResponse = _VK_SendRequest("fave.getUsers", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_favegetUsers
@@ -7188,23 +7226,23 @@ EndFunc   ;==>_VK_favegetUsers
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_favegetPhotos()
-; Description ...: Возвращает фотографии, на которых текущий пользователь поставил отметку "Мне нравится".
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ С„РѕС‚РѕРіСЂР°С„РёРё, РЅР° РєРѕС‚РѕСЂС‹С… С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїРѕСЃС‚Р°РІРёР» РѕС‚РјРµС‚РєСѓ "РњРЅРµ РЅСЂР°РІРёС‚СЃСЏ".
 ; Syntax.........: _VK_favegetPhotos()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_favegetPhotos()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.getPhotos.xml", "")
+	$sResponse = _VK_SendRequest("fave.getPhotos", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_favegetPhotos
@@ -7213,23 +7251,23 @@ EndFunc   ;==>_VK_favegetPhotos
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_favegetPosts()
-; Description ...: Возвращает записи, на которых текущий пользователь поставил отметку <b>«Мне нравится»</b>.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ Р·Р°РїРёСЃРё, РЅР° РєРѕС‚РѕСЂС‹С… С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїРѕСЃС‚Р°РІРёР» РѕС‚РјРµС‚РєСѓ <b>В«РњРЅРµ РЅСЂР°РІРёС‚СЃСЏВ»</b>.
 ; Syntax.........: _VK_favegetPosts()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_favegetPosts()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.getPosts.xml", "")
+	$sResponse = _VK_SendRequest("fave.getPosts", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_favegetPosts
@@ -7238,23 +7276,23 @@ EndFunc   ;==>_VK_favegetPosts
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_favegetVideos()
-; Description ...: Возвращает список видеозаписей, на которых текущий пользователь поставил отметку <b>«Мне нравится»</b>.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РІРёРґРµРѕР·Р°РїРёСЃРµР№, РЅР° РєРѕС‚РѕСЂС‹С… С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїРѕСЃС‚Р°РІРёР» РѕС‚РјРµС‚РєСѓ <b>В«РњРЅРµ РЅСЂР°РІРёС‚СЃСЏВ»</b>.
 ; Syntax.........: _VK_favegetVideos()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_favegetVideos()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.getVideos.xml", "")
+	$sResponse = _VK_SendRequest("fave.getVideos", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_favegetVideos
@@ -7263,23 +7301,23 @@ EndFunc   ;==>_VK_favegetVideos
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_favegetLinks()
-; Description ...: Возвращает ссылки, добавленные в закладки текущим пользователем.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃСЃС‹Р»РєРё, РґРѕР±Р°РІР»РµРЅРЅС‹Рµ РІ Р·Р°РєР»Р°РґРєРё С‚РµРєСѓС‰РёРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј.
 ; Syntax.........: _VK_favegetLinks()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_favegetLinks()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.getLinks.xml", "")
+	$sResponse = _VK_SendRequest("fave.getLinks", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_favegetLinks
@@ -7288,23 +7326,23 @@ EndFunc   ;==>_VK_favegetLinks
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_faveaddUser()
-; Description ...: Добавляет пользователя в закладки.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ Р·Р°РєР»Р°РґРєРё.
 ; Syntax.........: _VK_faveaddUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_faveaddUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.addUser.xml", "")
+	$sResponse = _VK_SendRequest("fave.addUser", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_faveaddUser
@@ -7313,23 +7351,23 @@ EndFunc   ;==>_VK_faveaddUser
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_faveremoveUser()
-; Description ...: Удаляет пользователя из закладок.
+; Description ...: РЈРґР°Р»СЏРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· Р·Р°РєР»Р°РґРѕРє.
 ; Syntax.........: _VK_faveremoveUser()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_faveremoveUser()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.removeUser.xml", "")
+	$sResponse = _VK_SendRequest("fave.removeUser", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_faveremoveUser
@@ -7338,23 +7376,23 @@ EndFunc   ;==>_VK_faveremoveUser
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_faveaddGroup()
-; Description ...: Добавляет сообщество в закладки.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ СЃРѕРѕР±С‰РµСЃС‚РІРѕ РІ Р·Р°РєР»Р°РґРєРё.
 ; Syntax.........: _VK_faveaddGroup()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_faveaddGroup()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.addGroup.xml", "")
+	$sResponse = _VK_SendRequest("fave.addGroup", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_faveaddGroup
@@ -7363,23 +7401,23 @@ EndFunc   ;==>_VK_faveaddGroup
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_faveremoveGroup()
-; Description ...: Удаляет сообщество из закладок.
+; Description ...: РЈРґР°Р»СЏРµС‚ СЃРѕРѕР±С‰РµСЃС‚РІРѕ РёР· Р·Р°РєР»Р°РґРѕРє.
 ; Syntax.........: _VK_faveremoveGroup()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_faveremoveGroup()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.removeGroup.xml", "")
+	$sResponse = _VK_SendRequest("fave.removeGroup", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_faveremoveGroup
@@ -7388,23 +7426,23 @@ EndFunc   ;==>_VK_faveremoveGroup
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_faveaddLink()
-; Description ...: Добавляет ссылку в закладки.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ СЃСЃС‹Р»РєСѓ РІ Р·Р°РєР»Р°РґРєРё.
 ; Syntax.........: _VK_faveaddLink()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_faveaddLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.addLink.xml", "")
+	$sResponse = _VK_SendRequest("fave.addLink", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_faveaddLink
@@ -7413,23 +7451,23 @@ EndFunc   ;==>_VK_faveaddLink
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_faveremoveLink()
-; Description ...: Удаляет ссылку из закладок.
+; Description ...: РЈРґР°Р»СЏРµС‚ СЃСЃС‹Р»РєСѓ РёР· Р·Р°РєР»Р°РґРѕРє.
 ; Syntax.........: _VK_faveremoveLink()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_faveremoveLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("fave.removeLink.xml", "")
+	$sResponse = _VK_SendRequest("fave.removeLink", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_faveremoveLink
@@ -7440,23 +7478,23 @@ EndFunc   ;==>_VK_faveremoveLink
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notificationsget()
-; Description ...: Возвращает список оповещений об ответах других пользователей на записи текущего пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РѕРїРѕРІРµС‰РµРЅРёР№ РѕР± РѕС‚РІРµС‚Р°С… РґСЂСѓРіРёС… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РЅР° Р·Р°РїРёСЃРё С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_notificationsget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notificationsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notifications.get.xml", "")
+	$sResponse = _VK_SendRequest("notifications.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notificationsget
@@ -7465,23 +7503,23 @@ EndFunc   ;==>_VK_notificationsget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_notificationsmarkAsViewed()
-; Description ...: Сбрасывает счетчик непросмотренных оповещений об ответах других пользователей на записи текущего пользователя.
+; Description ...: РЎР±СЂР°СЃС‹РІР°РµС‚ СЃС‡РµС‚С‡РёРє РЅРµРїСЂРѕСЃРјРѕС‚СЂРµРЅРЅС‹С… РѕРїРѕРІРµС‰РµРЅРёР№ РѕР± РѕС‚РІРµС‚Р°С… РґСЂСѓРіРёС… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РЅР° Р·Р°РїРёСЃРё С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_notificationsmarkAsViewed()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_notificationsmarkAsViewed()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("notifications.markAsViewed.xml", "")
+	$sResponse = _VK_SendRequest("notifications.markAsViewed", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_notificationsmarkAsViewed
@@ -7492,23 +7530,23 @@ EndFunc   ;==>_VK_notificationsmarkAsViewed
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_statsget()
-; Description ...: Возвращает статистику сообщества или приложения.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚РёСЃС‚РёРєСѓ СЃРѕРѕР±С‰РµСЃС‚РІР° РёР»Рё РїСЂРёР»РѕР¶РµРЅРёСЏ.
 ; Syntax.........: _VK_statsget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_statsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("stats.get.xml", "")
+	$sResponse = _VK_SendRequest("stats.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_statsget
@@ -7517,23 +7555,23 @@ EndFunc   ;==>_VK_statsget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_statstrackVisitor()
-; Description ...: Добавляет данные о текущем сеансе в статистику посещаемости приложения.
+; Description ...: Р”РѕР±Р°РІР»СЏРµС‚ РґР°РЅРЅС‹Рµ Рѕ С‚РµРєСѓС‰РµРј СЃРµР°РЅСЃРµ РІ СЃС‚Р°С‚РёСЃС‚РёРєСѓ РїРѕСЃРµС‰Р°РµРјРѕСЃС‚Рё РїСЂРёР»РѕР¶РµРЅРёСЏ.
 ; Syntax.........: _VK_statstrackVisitor()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_statstrackVisitor()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("stats.trackVisitor.xml", "")
+	$sResponse = _VK_SendRequest("stats.trackVisitor", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_statstrackVisitor
@@ -7542,23 +7580,23 @@ EndFunc   ;==>_VK_statstrackVisitor
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_statsgetPostReach()
-; Description ...: Возвращает статистику для записи на стене.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚РёСЃС‚РёРєСѓ РґР»СЏ Р·Р°РїРёСЃРё РЅР° СЃС‚РµРЅРµ.
 ; Syntax.........: _VK_statsgetPostReach()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_statsgetPostReach()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("stats.getPostReach.xml", "")
+	$sResponse = _VK_SendRequest("stats.getPostReach", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_statsgetPostReach
@@ -7569,23 +7607,23 @@ EndFunc   ;==>_VK_statsgetPostReach
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_appsgetCatalog()
-; Description ...: Возвращает список приложений, доступных для пользователей сайта через каталог приложений.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїСЂРёР»РѕР¶РµРЅРёР№, РґРѕСЃС‚СѓРїРЅС‹С… РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ СЃР°Р№С‚Р° С‡РµСЂРµР· РєР°С‚Р°Р»РѕРі РїСЂРёР»РѕР¶РµРЅРёР№.
 ; Syntax.........: _VK_appsgetCatalog()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_appsgetCatalog()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("apps.getCatalog.xml", "")
+	$sResponse = _VK_SendRequest("apps.getCatalog", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_appsgetCatalog
@@ -7594,23 +7632,23 @@ EndFunc   ;==>_VK_appsgetCatalog
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_appsget()
-; Description ...: Возвращает данные о запрошенном приложении на платформе ВКонтакте
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РґР°РЅРЅС‹Рµ Рѕ Р·Р°РїСЂРѕС€РµРЅРЅРѕРј РїСЂРёР»РѕР¶РµРЅРёРё РЅР° РїР»Р°С‚С„РѕСЂРјРµ Р’РљРѕРЅС‚Р°РєС‚Рµ
 ; Syntax.........: _VK_appsget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_appsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("apps.get.xml", "")
+	$sResponse = _VK_SendRequest("apps.get", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_appsget
@@ -7619,23 +7657,23 @@ EndFunc   ;==>_VK_appsget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_appssendRequest()
-; Description ...: Позволяет отправить запрос другому пользователю в приложении, использующем авторизацию ВКонтакте.
+; Description ...: РџРѕР·РІРѕР»СЏРµС‚ РѕС‚РїСЂР°РІРёС‚СЊ Р·Р°РїСЂРѕСЃ РґСЂСѓРіРѕРјСѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РІ РїСЂРёР»РѕР¶РµРЅРёРё, РёСЃРїРѕР»СЊР·СѓСЋС‰РµРј Р°РІС‚РѕСЂРёР·Р°С†РёСЋ Р’РљРѕРЅС‚Р°РєС‚Рµ.
 ; Syntax.........: _VK_appssendRequest()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_appssendRequest()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("apps.sendRequest.xml", "")
+	$sResponse = _VK_SendRequest("apps.sendRequest", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_appssendRequest
@@ -7644,23 +7682,23 @@ EndFunc   ;==>_VK_appssendRequest
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_appsdeleteAppRequests()
-; Description ...: Удаляет все уведомления о запросах, отправленных из текущего приложения
+; Description ...: РЈРґР°Р»СЏРµС‚ РІСЃРµ СѓРІРµРґРѕРјР»РµРЅРёСЏ Рѕ Р·Р°РїСЂРѕСЃР°С…, РѕС‚РїСЂР°РІР»РµРЅРЅС‹С… РёР· С‚РµРєСѓС‰РµРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ
 ; Syntax.........: _VK_appsdeleteAppRequests()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_appsdeleteAppRequests()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("apps.deleteAppRequests.xml", "")
+	$sResponse = _VK_SendRequest("apps.deleteAppRequests", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_appsdeleteAppRequests
@@ -7669,23 +7707,23 @@ EndFunc   ;==>_VK_appsdeleteAppRequests
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_appsgetFriendsList()
-; Description ...: Создает список друзей, который будет использоваться при отправке пользователем приглашений в приложение.
+; Description ...: РЎРѕР·РґР°РµС‚ СЃРїРёСЃРѕРє РґСЂСѓР·РµР№, РєРѕС‚РѕСЂС‹Р№ Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РїСЂРё РѕС‚РїСЂР°РІРєРµ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј РїСЂРёРіР»Р°С€РµРЅРёР№ РІ РїСЂРёР»РѕР¶РµРЅРёРµ.
 ; Syntax.........: _VK_appsgetFriendsList()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_appsgetFriendsList()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("apps.getFriendsList.xml", "")
+	$sResponse = _VK_SendRequest("apps.getFriendsList", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_appsgetFriendsList
@@ -7696,23 +7734,23 @@ EndFunc   ;==>_VK_appsgetFriendsList
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_utilscheckLink()
-; Description ...: Возвращает информацию о том, является ли внешняя ссылка заблокированной на сайте ВКонтакте.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, СЏРІР»СЏРµС‚СЃСЏ Р»Рё РІРЅРµС€РЅСЏСЏ СЃСЃС‹Р»РєР° Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРЅРѕР№ РЅР° СЃР°Р№С‚Рµ Р’РљРѕРЅС‚Р°РєС‚Рµ.
 ; Syntax.........: _VK_utilscheckLink()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_utilscheckLink()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("utils.checkLink.xml", "")
+	$sResponse = _VK_SendRequest("utils.checkLink", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_utilscheckLink
@@ -7720,23 +7758,23 @@ EndFunc   ;==>_VK_utilscheckLink
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_utilsresolveScreenName()
-; Description ...: Определяет тип объекта (пользователь, сообщество, приложение) и его идентификатор по короткому имени <b>screen_name</b>.
+; Description ...: РћРїСЂРµРґРµР»СЏРµС‚ С‚РёРї РѕР±СЉРµРєС‚Р° (РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ, СЃРѕРѕР±С‰РµСЃС‚РІРѕ, РїСЂРёР»РѕР¶РµРЅРёРµ) Рё РµРіРѕ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕ РєРѕСЂРѕС‚РєРѕРјСѓ РёРјРµРЅРё <b>screen_name</b>.
 ; Syntax.........: _VK_utilsresolveScreenName()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_utilsresolveScreenName()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("utils.resolveScreenName.xml", "")
+	$sResponse = _VK_SendRequest("utils.resolveScreenName", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_utilsresolveScreenName
@@ -7745,23 +7783,23 @@ EndFunc   ;==>_VK_utilsresolveScreenName
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_utilsgetServerTime()
-; Description ...: Возвращает текущее время на сервере <b>ВКонтакте</b> в <b>unixtime</b>.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ С‚РµРєСѓС‰РµРµ РІСЂРµРјСЏ РЅР° СЃРµСЂРІРµСЂРµ <b>Р’РљРѕРЅС‚Р°РєС‚Рµ</b> РІ <b>unixtime</b>.
 ; Syntax.........: _VK_utilsgetServerTime()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_utilsgetServerTime()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("utils.getServerTime.xml", "")
+	$sResponse = _VK_SendRequest("utils.getServerTime", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_utilsgetServerTime
@@ -7772,23 +7810,23 @@ EndFunc   ;==>_VK_utilsgetServerTime
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetCountries()
-; Description ...: Возвращает список стран.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє СЃС‚СЂР°РЅ.
 ; Syntax.........: _VK_databasegetCountries()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetCountries()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getCountries.xml", "")
+	$sResponse = _VK_SendRequest("database.getCountries", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetCountries
@@ -7797,23 +7835,23 @@ EndFunc   ;==>_VK_databasegetCountries
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetRegions()
-; Description ...: Возвращает список регионов.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє СЂРµРіРёРѕРЅРѕРІ.
 ; Syntax.........: _VK_databasegetRegions()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetRegions()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getRegions.xml", "")
+	$sResponse = _VK_SendRequest("database.getRegions", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetRegions
@@ -7822,23 +7860,23 @@ EndFunc   ;==>_VK_databasegetRegions
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetStreetsById()
-; Description ...: Возвращает информацию об улицах по их идентификаторам (<b>id</b>).
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ РѕР± СѓР»РёС†Р°С… РїРѕ РёС… РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР°Рј (<b>id</b>).
 ; Syntax.........: _VK_databasegetStreetsById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetStreetsById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getStreetsById.xml", "")
+	$sResponse = _VK_SendRequest("database.getStreetsById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetStreetsById
@@ -7847,23 +7885,23 @@ EndFunc   ;==>_VK_databasegetStreetsById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetCountriesById()
-; Description ...: Возвращает информацию о странах по их идентификаторам
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ СЃС‚СЂР°РЅР°С… РїРѕ РёС… РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР°Рј
 ; Syntax.........: _VK_databasegetCountriesById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetCountriesById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getCountriesById.xml", "")
+	$sResponse = _VK_SendRequest("database.getCountriesById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetCountriesById
@@ -7872,23 +7910,23 @@ EndFunc   ;==>_VK_databasegetCountriesById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetCities()
-; Description ...: Возвращает список городов.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РіРѕСЂРѕРґРѕРІ.
 ; Syntax.........: _VK_databasegetCities()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetCities()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getCities.xml", "")
+	$sResponse = _VK_SendRequest("database.getCities", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetCities
@@ -7897,23 +7935,23 @@ EndFunc   ;==>_VK_databasegetCities
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetCitiesById()
-; Description ...: Возвращает информацию о городах по их идентификаторам.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РіРѕСЂРѕРґР°С… РїРѕ РёС… РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР°Рј.
 ; Syntax.........: _VK_databasegetCitiesById()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetCitiesById()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getCitiesById.xml", "")
+	$sResponse = _VK_SendRequest("database.getCitiesById", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetCitiesById
@@ -7922,23 +7960,23 @@ EndFunc   ;==>_VK_databasegetCitiesById
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetUniversities()
-; Description ...: Возвращает список высших учебных заведений.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РІС‹СЃС€РёС… СѓС‡РµР±РЅС‹С… Р·Р°РІРµРґРµРЅРёР№.
 ; Syntax.........: _VK_databasegetUniversities()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetUniversities()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getUniversities.xml", "")
+	$sResponse = _VK_SendRequest("database.getUniversities", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetUniversities
@@ -7947,23 +7985,23 @@ EndFunc   ;==>_VK_databasegetUniversities
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetSchools()
-; Description ...: Возвращает список школ.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє С€РєРѕР».
 ; Syntax.........: _VK_databasegetSchools()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetSchools()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getSchools.xml", "")
+	$sResponse = _VK_SendRequest("database.getSchools", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetSchools
@@ -7972,23 +8010,23 @@ EndFunc   ;==>_VK_databasegetSchools
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetSchoolClasses()
-; Description ...: Возвращает список классов, характерных для школ определенной страны.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєР»Р°СЃСЃРѕРІ, С…Р°СЂР°РєС‚РµСЂРЅС‹С… РґР»СЏ С€РєРѕР» РѕРїСЂРµРґРµР»РµРЅРЅРѕР№ СЃС‚СЂР°РЅС‹.
 ; Syntax.........: _VK_databasegetSchoolClasses()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetSchoolClasses()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getSchoolClasses.xml", "")
+	$sResponse = _VK_SendRequest("database.getSchoolClasses", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetSchoolClasses
@@ -7997,23 +8035,23 @@ EndFunc   ;==>_VK_databasegetSchoolClasses
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetFaculties()
-; Description ...: Возвращает список факультетов.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє С„Р°РєСѓР»СЊС‚РµС‚РѕРІ.
 ; Syntax.........: _VK_databasegetFaculties()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetFaculties()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getFaculties.xml", "")
+	$sResponse = _VK_SendRequest("database.getFaculties", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetFaculties
@@ -8022,23 +8060,23 @@ EndFunc   ;==>_VK_databasegetFaculties
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_databasegetChairs()
-; Description ...: Возвращает список кафедр университета по указанному факультету.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєР°С„РµРґСЂ СѓРЅРёРІРµСЂСЃРёС‚РµС‚Р° РїРѕ СѓРєР°Р·Р°РЅРЅРѕРјСѓ С„Р°РєСѓР»СЊС‚РµС‚Сѓ.
 ; Syntax.........: _VK_databasegetChairs()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_databasegetChairs()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("database.getChairs.xml", "")
+	$sResponse = _VK_SendRequest("database.getChairs", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_databasegetChairs
@@ -8048,46 +8086,46 @@ EndFunc   ;==>_VK_databasegetChairs
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_giftsget()
-; Description ...: Возвращает список полученных подарков пользователя.
+; Description ...: Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїРѕР»СѓС‡РµРЅРЅС‹С… РїРѕРґР°СЂРєРѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
 ; Syntax.........: _VK_giftsget()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_giftsget()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("gifts.get.xml", "")
+	$sResponse = _VK_SendRequest("gifts.get", "")
 
 	If @error Then Return SetError(1, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_giftsget
 
 ; #FUNCTION# =================================================================================================
 ; Name...........:  _VK_searchgetHints()
-; Description ...: Метод позволяет получить результаты быстрого поиска по произвольной подстроке
+; Description ...: РњРµС‚РѕРґ РїРѕР·РІРѕР»СЏРµС‚ РїРѕР»СѓС‡РёС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚С‹ Р±С‹СЃС‚СЂРѕРіРѕ РїРѕРёСЃРєР° РїРѕ РїСЂРѕРёР·РІРѕР»СЊРЅРѕР№ РїРѕРґСЃС‚СЂРѕРєРµ
 ; Syntax.........: _VK_searchgetHints()
-; Parameters ....: $_sAccessToken - ключ доступа выданный функцией авторизации.
+; Parameters ....: $_sAccessToken - РєР»СЋС‡ РґРѕСЃС‚СѓРїР° РІС‹РґР°РЅРЅС‹Р№ С„СѓРЅРєС†РёРµР№ Р°РІС‚РѕСЂРёР·Р°С†РёРё.
 ;
-; Return values .: Успех - Массив идентификаторов и @error = 0.
-;                  Неудача - Ошибка выданная сайтом и @error = 1
+; Return values .: РЈСЃРїРµС… - РњР°СЃСЃРёРІ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РћС€РёР±РєР° РІС‹РґР°РЅРЅР°СЏ СЃР°Р№С‚РѕРј Рё @error = РљРѕРґ РѕС€РёР±РєРё СЃР°Р№С‚Р°
 ; Author ........: Medic84
-; Remarks .......: Для вызова этой функции приложение должно иметь права с битовой маской, содержащей 2.
+; Remarks .......: Р”Р»СЏ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїСЂРёР»РѕР¶РµРЅРёРµ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РїСЂР°РІР° СЃ Р±РёС‚РѕРІРѕР№ РјР°СЃРєРѕР№, СЃРѕРґРµСЂР¶Р°С‰РµР№ 2.
 ; ============================================================================================================
 Func _VK_searchgetHints()
 	Local $sResponse, $asReturn
 
-	$sResponse = _VK_SendRequest("search.getHints.xml", "")
+	$sResponse = _VK_SendRequest("search.getHints", "")
 
-	If @error Then Return SetError(@error, 0, $aResponse)
+	If @error Then Return SetError(@error, 0, $sResponse)
 
-	$asReturn = _VK_CreateArray($sResponse, "uid")
+
 	Return $asReturn
 
 EndFunc   ;==>_VK_searchgetHints
@@ -8097,17 +8135,16 @@ EndFunc   ;==>_VK_searchgetHints
 
 ; #FUNCTION# =================================================================================================
 ; Name...........: __guiAccessToken()
-; Description ...: Открывает окно для получения доступа приложению
-; Syntax.........: __guiAccessToken($_sURI, $_sGUITitle, $_sRedirect_uri)
-; Parameters ....: $_sURI - Ссылка.
-;				   $_sGUITitle - Название окна
-;				   $_sRedirect_uri - ссылка перенаправления
-; Return values .: Успех - Нет возвращаемого значения
-;                  Неудача - -1 и @error = -1
+; Description ...: РћС‚РєСЂС‹РІР°РµС‚ РѕРєРЅРѕ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРѕСЃС‚СѓРїР° РїСЂРёР»РѕР¶РµРЅРёСЋ
+; Syntax.........: __guiAccessToken($_sURI, $_sGUITitle)
+; Parameters ....: $_sURI - РЎСЃС‹Р»РєР°.
+;				   $_sGUITitle - РќР°Р·РІР°РЅРёРµ РѕРєРЅР°
+; Return values .: РЈСЃРїРµС… - РќРµС‚ РІРѕР·РІСЂР°С‰Р°РµРјРѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ
+;                  РќРµСѓРґР°С‡Р° - -1 Рё @error = -1
 ; Author ........: Fever
-; Remarks .......: Отсутствуют
+; Remarks .......: РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
 ; ============================================================================================================
-Func __guiAccessToken($_sURI, $_sGUITitle, $_sRedirect_uri)
+Func __guiAccessToken($_sURI, $_sGUITitle)
     Local $oIE = _IECreateEmbedded()
     Local $hTimer = TimerInit() , $sURL
 
@@ -8117,7 +8154,7 @@ Func __guiAccessToken($_sURI, $_sGUITitle, $_sRedirect_uri)
     _IENavigate($oIE, $_sURI)
     $sResponse = _IEBodyReadText($oIE)
 
-    If StringInStr($sResponse, "Пожалуйста, не копируйте") Then
+    If StringInStr($sResponse, "РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РЅРµ РєРѕРїРёСЂСѓР№С‚Рµ") Then
         $sURL = _IEPropertyGet($oIE, "locationurl")
         Return __responseParse($sURL)
     EndIf
@@ -8132,7 +8169,7 @@ Func __guiAccessToken($_sURI, $_sGUITitle, $_sRedirect_uri)
             If StringInStr($sURL, "#access_token") Then
                 GUISetState(@SW_HIDE)
                 $sResponse = _IEBodyReadText($oIE)
-                If StringInStr($sResponse, "Пожалуйста, не копируйте") Then
+                If StringInStr($sResponse, "РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РЅРµ РєРѕРїРёСЂСѓР№С‚Рµ") Then
                     GUIDelete($_hATgui)
                     Return __responseParse($sURL)
                 Else
@@ -8149,13 +8186,13 @@ EndFunc   ;==>__guiAccessToken
 
 ; #FUNCTION# =================================================================================================
 ; Name...........: __responseParse()
-; Description ...: Генерирует открытый и секретный ключи для шифрования по алгоритму RSA
+; Description ...: Р“РµРЅРµСЂРёСЂСѓРµС‚ РѕС‚РєСЂС‹С‚С‹Р№ Рё СЃРµРєСЂРµС‚РЅС‹Р№ РєР»СЋС‡Рё РґР»СЏ С€РёС„СЂРѕРІР°РЅРёСЏ РїРѕ Р°Р»РіРѕСЂРёС‚РјСѓ RSA
 ; Syntax.........:  __responseParse($_sResponse)
-; Parameters ....: $_sResponse - Ответ сервера.
-; Return values .: Успех - Возвращает строку access_token и @error = 0.
-;                  Неудача - почему то не предусмотрена))
+; Parameters ....: $_sResponse - РћС‚РІРµС‚ СЃРµСЂРІРµСЂР°.
+; Return values .: РЈСЃРїРµС… - Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃС‚СЂРѕРєСѓ access_token Рё @error = 0.
+;                  РќРµСѓРґР°С‡Р° - РїРѕС‡РµРјСѓ С‚Рѕ РЅРµ РїСЂРµРґСѓСЃРјРѕС‚СЂРµРЅР°))
 ; Author ........: Fever
-; Remarks .......: Отсутствуют
+; Remarks .......: РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
 ; ============================================================================================================
 Func __responseParse($_sResponse)
 	Local $aNArray = StringSplit($_sResponse, "&"), $aResArray[UBound($aNArray)], $_sStr
@@ -8172,49 +8209,36 @@ Func __responseParse($_sResponse)
 EndFunc   ;==>__responseParse
 
 ; #FUNCTION# =================================================================================================
-; Name...........: _VK_CreateArray()
-; Description ...: Создает массив из ответной строки по кодовому слову
-; Syntax.........: _VK_CreateArray($sString, $sCodeWord)
-; Parameters ....: $sString - Ответная стока - та которую выдал ВКонтакте
-;                  $sCodeWord - слово для поиска - которое заключено в галки
-; Return values .: Успех -  Массив с даными
-;                  Неудача - 1
-; Author ........: Medic84
-; Remarks .......: Отсутствуют
-; ============================================================================================================
-Func _VK_CreateArray($sString, $sCodeWord)
-	Dim $aRetArray
-
-	$aRetArray = StringRegExp($sString, "(?si)<" & $sCodeWord & ">(.*?)</" & $sCodeWord & ">", 3)
-
-	Return $aRetArray
-EndFunc   ;==>_VK_CreateArray
-
-; #FUNCTION# =================================================================================================
 ; Name...........: _VK_SendRequest()
-; Description ...: Создает массив из ответной строки по кодовому слову
-; Syntax.........: _VK_CreateArray($sString, $sCodeWord)
-; Parameters ....: $sString - Ответная стока - та которую выдал ВКонтакте
-;                  $sCodeWord - слово для поиска - которое заключено в галки
-; Return values .: Успех -  Массив с даными
-;                  Неудача - 1
+; Description ...: РЎРѕР·РґР°РµС‚ Р·Р°РїСЂРѕСЃ РЅР° РјРµС‚Рѕ Р’РєРѕРЅС‚Р°РєС‚Рµ
+; Syntax.........: _VK_SendRequest($sMethod, $sRequest[, $bNeedToken])
+; Parameters ....: 	$sMethod - JSON РјРµС‚РѕРґ Р’РєРѕРЅС‚Р°РєС‚Рµ
+;                  	$sRequest - Р°СЂРіСѓРјРµРЅС‚(С‹) Р·Р°РїСЂРѕСЃР°
+;					$bNeedToken - С‚СЂРµР±СѓРµС‚СЃСЏ Р»Рё access_token РІ РјРµС‚РѕРґРµ
+; Return values .: РЈСЃРїРµС… -  РњР°СЃСЃРёРІ СЃ РѕС‚РІРµС‚РѕРј СЃРµСЂРІРµСЂР°
+;                  РќРµСѓРґР°С‡Р° - РЎС‚СЂРѕРєР° СЃ РѕС€РёР±РєРѕР№ Рё @error СЃРѕРґРµСЂР¶Р°С‰РёР№ РєРѕРґ РѕС€РёР±РєРё Р’РєРѕРЅС‚Р°РєС‚Рµ
 ; Author ........: Medic84
-; Remarks .......: Отсутствуют
+; Remarks .......: РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
 ; ============================================================================================================
-Func _VK_SendRequest($sMethod, $sRequest)
-	Local $sResponse, $aError = 0
+Func _VK_SendRequest($sMethod, $sRequest, $bNeedToken = True)
+	Local $sResponse, $aResponse, $error_code
 
-	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/" & $sMethod & "?access_token=" & $_sAccessToken & "&" & $sRequest), 4)
+	If $bNeedToken AND ($_sAccessToken = "") Then Return SetError(-1, 0, "access_token is needed for this method")
 
-	$error_Code = _VK_CreateArray($sResponse, "error_code")
-	$error_Msg = _VK_CreateArray($sResponse, "error_msg")
+	$sResponse = ($bNeedToken) ? $sMethod & "?access_token=" & $_sAccessToken & "&" & $sRequest & "&v=" & $_sAPIVer : $sMethod &  "?" & $sRequest & "&v=" & $_sAPIVer
+	$sResponse = BinaryToString(InetRead("https://api.vk.com/method/" & $sResponse), 4)
 
-	If IsArray($error_Code) Then Return SetError($error_Code[0], 0, "Error: " & $error_Code[0] & " - " & $error_Msg[0])
+	$aResponse = _JSONDecode($sResponse)
 
-	Return $sResponse
+	If ($aResponse[1][0] = "error") Then
+		$aResponse = $aResponse[1][1]
+		If ($error_code) Then Return SetError($aResponse[1][1], 0, "Error: " & $aResponse[1][1] & " - " & $aResponse[2][1])
+	EndIf
+
+	Return $aResponse[1][1]
 EndFunc   ;==>_VK_SendRequest
 
-;===============================================================================
+; #FUNCTION# =================================================================================================
 ; Description:      _StringFormatTime - Get a string representation of a timestamp
 ;					according to the format string given to the function.
 ; Syntax:			_StringFormatTime("format", timestamp)
@@ -8257,7 +8281,7 @@ EndFunc   ;==>_VK_SendRequest
 ;
 ; User CallTip:		_StringFormatTime($s_Format, $i_Timestamp, $i_MaxLen = 255) - Get a string representation of a timestamp according to the format string given to the function. (required: <_UnixTime.au3>)
 ; Author(s):        Rob Saunders (admin@therks.com)
-;===============================================================================
+; ============================================================================================================
 Func _StringFormatTime($s_Format, $i_Timestamp)
 	Local $ptr_Time, $av_StrfTime
 
@@ -8277,13 +8301,13 @@ EndFunc   ;==>_StringFormatTime
 
 ; #FUNCTION# =================================================================================================
 ; Name...........: _Encoding_URIEncode()
-; Description ...: Кодирование текстовой строки в URI-кодю
+; Description ...: РљРѕРґРёСЂРѕРІР°РЅРёРµ С‚РµРєСЃС‚РѕРІРѕР№ СЃС‚СЂРѕРєРё РІ URI-РєРѕРґ
 ; Syntax.........: _Encoding_URIEncode($sString)
-; Parameters ....: $sString - строка? которую необходимо преобразовать
-; Return values .: Успех -  закодированный текст
-;                  Неудача - 0
+; Parameters ....: $sString - СЃС‚СЂРѕРєР°, РєРѕС‚РѕСЂСѓСЋ РЅРµРѕР±С…РѕРґРёРјРѕ РїСЂРµРѕР±СЂР°Р·РѕРІР°С‚СЊ
+; Return values .: РЈСЃРїРµС… -  Р·Р°РєРѕРґРёСЂРѕРІР°РЅРЅС‹Р№ С‚РµРєСЃС‚
+;                  РќРµСѓРґР°С‡Р° - 0
 ; Author ........: CreatoR
-; Remarks .......: Отсутствуют
+; Remarks .......: РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
 ; ============================================================================================================
 Func _Encoding_URIEncode($sString)
 	Local $oSC = ObjCreate("ScriptControl")
